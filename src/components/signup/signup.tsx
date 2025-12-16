@@ -9,31 +9,120 @@ import { Card } from "@/components/ui/card"
 import { motion } from "framer-motion"
 import { Github } from "lucide-react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useSignUp } from "@clerk/nextjs"
+import OtpVerification from "./otp"
 
 export function SignupForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
+  const { signUp, isLoaded, setActive } = useSignUp();
+  const [Otp, setOtp] = useState<string>("");
+  const [verificationStep, setverificationStep] = useState<boolean>(false)
+  const router = useRouter();
+  const [isOpen, setisOpen] = useState<boolean>(false)
+
+  if (!isLoaded) {
+    return (
+      <>
+        <h1>Loading...</h1>
+      </>
+    )
+  }
+
+  const onClose = () => {
+    setisOpen(false);
+  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     // Handle signup logic here
     console.log("Signup:", { name, email, password })
+    if (!isLoaded) return
+    try {
+      await signUp.create({
+        emailAddress: email,
+        password: password
+      })
+
+      await signUp.prepareEmailAddressVerification({
+        strategy: "email_code"
+      })
+
+      setverificationStep(true)
+      setisOpen(true);
+    } catch (error) {
+      console.log(error);
+    }
+
   }
 
-  const handleGoogleSignup = () => {
+  const verificationOtp = async () => {
+    if (!isLoaded) return;
+
+    try {
+      const res = await signUp.attemptEmailAddressVerification({
+        code: Otp
+      })
+
+      const { status, createdSessionId } = res;
+
+      if (status === "complete") {
+        await setActive({
+          session: createdSessionId
+        })
+        router.push("/problems")
+      }
+    } catch (error) {
+      console.log(error)
+    }
+
+  }
+
+  const handleGoogleSignup = async () => {
     // Handle Google OAuth
     console.log("Google signup")
+    try {
+      await signUp.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/problems",
+        redirectUrlComplete: "/problems"
+      })
+    } catch (error) {
+      console.log(error)
+    }
   }
 
-  const handleGithubSignup = () => {
+  const handleGithubSignup = async () => {
     // Handle GitHub OAuth
     console.log("GitHub signup")
+    try {
+      await signUp.authenticateWithRedirect({
+        strategy: "oauth_github",
+        redirectUrl: "/problems",
+        redirectUrlComplete: "/problems"
+      })
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <Card className="p-6 border-border/50">
+        {verificationStep && (
+          <OtpVerification
+            title="Otp verification"
+            isOpen={isOpen}
+            onClose={onClose}
+            otp={Otp}
+            setOtp={setOtp}
+            email={email}
+            onSubmit={verificationOtp}
+          />
+        )}
         <div className="space-y-4">
           <Button type="button" variant="outline" className="w-full bg-transparent" onClick={handleGoogleSignup}>
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">

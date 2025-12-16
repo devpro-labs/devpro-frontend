@@ -1,8 +1,14 @@
+export type Difficulty =
+  | "Beginner"
+  | "Intermediate"
+  | "Advanced"
+  | "Expert"
+
 export interface Problem {
   id: string
   title: string
   slug: string
-  difficulty: "easy" | "medium" | "hard"
+  difficulty: Difficulty
   category: string
   tags: string[]
   description: string
@@ -17,7 +23,7 @@ export const dummyProblems: Problem[] = [
     id: "1",
     title: "Build REST API with JWT Authentication",
     slug: "1-rest-api-jwt-auth",
-    difficulty: "medium",
+    difficulty: "Intermediate",
     category: "Authentication",
     tags: ["Express.js", "JWT", "API", "Security"],
     description: "Create a RESTful API with JWT-based authentication including login, register, and protected routes.",
@@ -29,7 +35,7 @@ export const dummyProblems: Problem[] = [
     id: "2",
     title: "Implement PostgreSQL Database Migrations",
     slug: "2-postgres-migrations",
-    difficulty: "easy",
+    difficulty: "Beginner",
     category: "Database",
     tags: ["PostgreSQL", "SQL", "Migrations"],
     description: "Set up database migrations for a user management system with proper foreign key relationships.",
@@ -41,7 +47,7 @@ export const dummyProblems: Problem[] = [
     id: "3",
     title: "Build Real-time Chat with WebSockets",
     slug: "3-realtime-chat-websockets",
-    difficulty: "hard",
+    difficulty: "Advanced",
     category: "WebSockets",
     tags: ["Socket.io", "Node.js", "Real-time"],
     description: "Create a real-time chat application with room support, typing indicators, and message history.",
@@ -54,7 +60,7 @@ export const dummyProblems: Problem[] = [
     id: "4",
     title: "Implement OAuth 2.0 with Google",
     slug: "4-oauth-google-integration",
-    difficulty: "medium",
+    difficulty: "Intermediate",
     category: "Authentication",
     tags: ["OAuth", "Google API", "Security"],
     description: "Integrate Google OAuth 2.0 authentication flow into an existing application.",
@@ -66,7 +72,7 @@ export const dummyProblems: Problem[] = [
     id: "5",
     title: "Create RESTful CRUD API",
     slug: "5-restful-crud-api",
-    difficulty: "easy",
+    difficulty: "Beginner",
     category: "API Development",
     tags: ["REST", "CRUD", "Express.js"],
     description: "Build a complete CRUD API for a blog system with proper HTTP methods and status codes.",
@@ -78,7 +84,7 @@ export const dummyProblems: Problem[] = [
     id: "6",
     title: "Implement Redis Caching Layer",
     slug: "6-redis-caching",
-    difficulty: "medium",
+    difficulty: "Intermediate",
     category: "Caching",
     tags: ["Redis", "Performance", "Caching"],
     description: "Add Redis caching to improve API response times and reduce database load.",
@@ -90,7 +96,7 @@ export const dummyProblems: Problem[] = [
     id: "7",
     title: "Build GraphQL API with Apollo Server",
     slug: "7-graphql-apollo-server",
-    difficulty: "hard",
+    difficulty: "Advanced",
     category: "API Development",
     tags: ["GraphQL", "Apollo", "Node.js"],
     description: "Create a GraphQL API with queries, mutations, and subscriptions using Apollo Server.",
@@ -102,7 +108,7 @@ export const dummyProblems: Problem[] = [
     id: "8",
     title: "Implement Rate Limiting Middleware",
     slug: "8-rate-limiting-middleware",
-    difficulty: "easy",
+    difficulty: "Beginner",
     category: "Security",
     tags: ["Express.js", "Middleware", "Security"],
     description: "Create rate limiting middleware to prevent API abuse and DDoS attacks.",
@@ -114,7 +120,7 @@ export const dummyProblems: Problem[] = [
     id: "9",
     title: "Deploy Node.js App to AWS",
     slug: "9-deploy-nodejs-aws",
-    difficulty: "hard",
+    difficulty: "Expert",
     category: "Deployment",
     tags: ["AWS", "EC2", "DevOps", "Deployment"],
     description: "Deploy a Node.js application to AWS with proper CI/CD pipeline and monitoring.",
@@ -127,7 +133,7 @@ export const dummyProblems: Problem[] = [
     id: "10",
     title: "Write Integration Tests with Jest",
     slug: "10-integration-tests-jest",
-    difficulty: "medium",
+    difficulty: "Intermediate",
     category: "Testing",
     tags: ["Jest", "Testing", "TDD"],
     description: "Create comprehensive integration tests for an API using Jest and Supertest.",
@@ -139,7 +145,7 @@ export const dummyProblems: Problem[] = [
     id: "11",
     title: "Implement MongoDB Aggregation Pipeline",
     slug: "11-mongodb-aggregation",
-    difficulty: "medium",
+    difficulty: "Intermediate",
     category: "Database",
     tags: ["MongoDB", "NoSQL", "Aggregation"],
     description: "Build complex data aggregation queries using MongoDB aggregation pipeline.",
@@ -151,7 +157,7 @@ export const dummyProblems: Problem[] = [
     id: "12",
     title: "Create Microservices with Docker",
     slug: "12-microservices-docker",
-    difficulty: "hard",
+    difficulty: "Expert",
     category: "Architecture",
     tags: ["Docker", "Microservices", "Architecture"],
     description: "Design and implement a microservices architecture using Docker containers.",

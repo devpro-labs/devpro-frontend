@@ -14,7 +14,7 @@ export interface Problem {
   isPremium?: boolean
 }
 
-import { dummyProblems } from '@/data/problems' // or same file
+import { Difficulty, dummyProblems } from '@/data/problems' // or same file
 import { Check } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { CheckEffected } from './checke-effected'
@@ -22,16 +22,18 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 
-const difficultyColors = {
-  easy: 'text-green-400',
-  medium: 'text-yellow-400',
-  hard: 'text-red-400',
+const difficultyColors: Record<Difficulty, string> = {
+  Beginner: 'text-green-400',
+  Intermediate: 'text-yellow-400',
+  Advanced: 'text-orange-400',
+  Expert: 'text-red-500',
 }
+
 
 export default function Problems() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('all')
-  const [difficulty, setDifficulty] = useState('all')
+  const [difficulty, setDifficulty] = useState<'all' | Difficulty>('all')
   const [tag, setTag] = useState('all')
   const solvedIds = ['2', '5']
   const router = useRouter();
@@ -97,18 +99,20 @@ export default function Problems() {
 
 
         {/* Difficulty */}
-        <Select value={difficulty} onValueChange={setDifficulty}>
+        <Select value={difficulty} onValueChange={(value) => setDifficulty(value as 'all' | Difficulty)}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Difficulty" />
           </SelectTrigger>
 
           <SelectContent>
             <SelectItem value="all">All Difficulty</SelectItem>
-            <SelectItem value="easy">Easy</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="hard">Hard</SelectItem>
+            <SelectItem value="Beginner">Beginner</SelectItem>
+            <SelectItem value="Intermediate">Intermediate</SelectItem>
+            <SelectItem value="Advanced">Advanced</SelectItem>
+            <SelectItem value="Expert">Expert</SelectItem>
           </SelectContent>
         </Select>
+
 
 
         {/* Tags */}
@@ -128,7 +132,6 @@ export default function Problems() {
 
       </div>
 
-      {/* PROBLEMS LIST */}
       {/* PROBLEMS LIST */}
       <div className="space-y-2">
         {filteredProblems.map((p, index) => {
@@ -169,15 +172,12 @@ export default function Problems() {
                 {/* RIGHT */}
                 <div className="flex items-center gap-3 shrink-0">
                   <span
-                    className={`text-sm capitalize ${p.difficulty === 'easy'
-                        ? 'text-green-400'
-                        : p.difficulty === 'medium'
-                          ? 'text-yellow-400'
-                          : 'text-red-400'
-                      }`}
+                    className={`text-sm font-medium ${difficultyColors[p.difficulty]}`}
                   >
                     {p.difficulty}
                   </span>
+
+
 
                   {/* {p.isPremium && (
                     <span className="text-xs px-2 py-1 rounded-full

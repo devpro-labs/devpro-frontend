@@ -9,25 +9,66 @@ import { motion } from "framer-motion"
 import { Github } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useSignIn } from "@clerk/nextjs"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const { isLoaded, signIn, setActive } = useSignIn();
+  const router = useRouter();
+  if (!isLoaded) {
+    return (
+      <>
+        <h1>Loading...</h1>
+      </>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     // Handle login logic here
     console.log("Login:", { email, password })
+    try {
+      const res = await signIn.create({
+        identifier: email,
+        password: password
+      })
+
+      await setActive({ session: res.createdSessionId })
+      router.push("/problems");
+
+    } catch (error) {
+      console.log(error)
+    }
   }
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     // Handle Google OAuth
     console.log("Google login")
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/problems",
+        redirectUrlComplete: "/problems"
+      })
+    } catch (error) {
+      console.log(error)
+    }
   }
 
-  const handleGithubLogin = () => {
+  const handleGithubLogin = async () => {
     // Handle GitHub OAuth
     console.log("GitHub login")
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_github",
+        redirectUrl: "/problems",
+        redirectUrlComplete: "/problems"
+      })
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   return (
