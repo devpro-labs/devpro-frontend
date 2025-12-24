@@ -1,36 +1,30 @@
 "use client"
 
+import { fetchProblems } from '@/components/problems/api'
 import Problems from '@/components/problems/problems'
 import { Header } from '@/components/ui/header'
+import { Response } from '@/lib/const/response'
 import { useAuth } from '@clerk/nextjs'
-import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
+const page =  () => {
 
-const page = () => {
-  // const {getToken} = useAuth()
+  const {getToken} = useAuth();
 
-  // async function main() {
-  //   const token = await getToken()
-  //   const api = await fetch('http://localhost:9000/api/problems/string',
-  //     {
-  //       headers:{
-  //         "Authorization": `Bearer ${token}`
-  //       }
-  //     }
-  //   )
+  const problems = useQuery({
+    queryKey: ['problems'],
+    queryFn: () => {
+      return getToken().then((token) => fetchProblems(token??""));
+    }
+  }) 
 
-  //   const data = await api.json()
-  //   console.log(data)
-  // }
-
-  // useEffect(() => {
-  //   main()
-  // }, [])
+  const res:Response|undefined = problems.data;
+  
 
   return (
-    <div>
+    <div> 
       <Header />
-      <Problems />
+      <Problems data={res?.DATA?.problems ?? []} />
     </div>
   )
 }

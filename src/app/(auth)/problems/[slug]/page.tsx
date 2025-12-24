@@ -1,15 +1,24 @@
 "use client"
+import { fetchSampleTestCases } from '@/components/problems/api';
 import ProblemDetailsPanel from '@/components/problems/left-panal/problem-details-panel';
 import CodeEditor from '@/components/problems/right-panal/editor';
 import TestCasesPanel from '@/components/problems/Testcases';
 import Loader from '@/components/ui/Loader';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { useProblem } from '@/data/problem-mapper';
+import { Response } from '@/lib/const/response';
+import { useAuth } from '@clerk/nextjs';
+import { useQuery } from '@tanstack/react-query';
+
 import { useParams } from 'next/navigation'
+import { useState } from 'react';
 
 const page = () => {
   const parmas = useParams();
   const {slug} = parmas;
+  const {getToken} = useAuth();
+  const [runCodeResponse, setRunCodeResponse] = useState<Response | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+
   if(!slug ) return (
     <Loader />
   )
@@ -18,7 +27,14 @@ const page = () => {
     <div>Invalid slug</div>
   )
 
-  const pro = useProblem(slug);
+  const problemQuery =  useQuery({
+    queryKey: ['problem', slug],
+    queryFn: () => {
+      return getToken().then((token) => fetchSampleTestCases(token??"", slug));
+    }
+  })
+
+  const res: Response|undefined = problemQuery.data;
   
   return (
     <div>
@@ -26,17 +42,26 @@ const page = () => {
         <ResizablePanel
          className='min-h-screen min-w-50 max-w-180'
         >
-          {pro && <ProblemDetailsPanel problem={pro.problem} details={pro.details} />}
+          {res && <ProblemDetailsPanel problem={res?.DATA?.problem} testcases={res?.DATA.testCases} />}
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel>
           <ResizablePanelGroup direction="vertical" className="h-full overflow-hidden ">
             <ResizablePanel>
-              <CodeEditor tags={pro?.problem.tags} />
+              <CodeEditor 
+              isRunning={isRunning}
+              setIsRunning={setIsRunning}
+              runCodeResponse={runCodeResponse}
+              setRunCodeResponse={setRunCodeResponse}
+              problemId={res?.DATA?.problem?.id ?? ""}
+              tags={res?.DATA?.problem?.tags ?? []} />
             </ResizablePanel>
             <ResizableHandle />
              <ResizablePanel defaultSize={35} minSize={20}>
-              <TestCasesPanel sampleTestCases={pro?.details?.sampleTestCases ?? []} />
+              <TestCasesPanel
+              isRunning={isRunning}
+              runCodeResponse={runCodeResponse}
+              sampleTestCases={res?.DATA?.testCases ?? []} />
             </ResizablePanel>
           </ResizablePanelGroup>
         </ResizablePanel>

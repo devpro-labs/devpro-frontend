@@ -1,6 +1,9 @@
 export interface TestCase {
-  input: any
-  expectedOutput: any
+  inputJson: any
+  expectedOutputJson: any
+  endpoint: string
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH"
+  expectedStatus: number
 }
 
 export interface ProblemDetail {

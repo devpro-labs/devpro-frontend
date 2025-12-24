@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 //@ts-ignore
 import "./globals.css"
 import { ClerkProvider } from "@clerk/nextjs"
+import { QueryClientProviderWrapper } from "@/context/Query"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -42,8 +43,10 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`font-sans antialiased`}>
         <ClerkProvider>
-          {children}
-          {/* <Analytics /> */}
+          <QueryClientProviderWrapper>
+            {children}
+            {/* <Analytics /> */}
+          </QueryClientProviderWrapper>
         </ClerkProvider>
       </body>
     </html>

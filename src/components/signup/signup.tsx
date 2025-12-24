@@ -12,6 +12,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSignUp } from "@clerk/nextjs"
 import OtpVerification from "./otp"
+import Loader from "../ui/Loader"
 
 export function SignupForm() {
   const [email, setEmail] = useState("")
@@ -26,7 +27,7 @@ export function SignupForm() {
   if (!isLoaded) {
     return (
       <>
-        <h1>Loading...</h1>
+        <Loader />
       </>
     )
   }
@@ -73,7 +74,7 @@ export function SignupForm() {
         await setActive({
           session: createdSessionId
         })
-        router.push("/problems")
+        router.push(SITE_MAP.problems.Problems);
       }
     } catch (error) {
       console.log(error)
@@ -87,8 +88,8 @@ export function SignupForm() {
     try {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: "/problems",
-        redirectUrlComplete: "/problems"
+        redirectUrl:SITE_MAP.problems.Problems,
+        redirectUrlComplete: SITE_MAP.problems.Problems
       })
     } catch (error) {
       console.log(error)
@@ -101,8 +102,8 @@ export function SignupForm() {
     try {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_github",
-        redirectUrl: "/problems",
-        redirectUrlComplete: "/problems"
+        redirectUrl: SITE_MAP.problems.Problems,
+        redirectUrlComplete: SITE_MAP.problems.Problems
       })
     } catch (error) {
       console.log(error)

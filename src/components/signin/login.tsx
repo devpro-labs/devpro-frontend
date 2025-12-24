@@ -11,6 +11,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSignIn } from "@clerk/nextjs"
+import Loader from "../ui/Loader"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
@@ -20,7 +21,7 @@ export function LoginForm() {
   if (!isLoaded) {
     return (
       <>
-        <h1>Loading...</h1>
+        <Loader />
       </>
     )
   }
@@ -36,7 +37,7 @@ export function LoginForm() {
       })
 
       await setActive({ session: res.createdSessionId })
-      router.push("/problems");
+      router.push(SITE_MAP.problems.Problems);
 
     } catch (error) {
       console.log(error)
@@ -49,8 +50,8 @@ export function LoginForm() {
     try {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: "/problems",
-        redirectUrlComplete: "/problems"
+        redirectUrl: SITE_MAP.problems.Problems,
+        redirectUrlComplete: SITE_MAP.problems.Problems
       })
     } catch (error) {
       console.log(error)
@@ -63,8 +64,8 @@ export function LoginForm() {
     try {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_github",
-        redirectUrl: "/problems",
-        redirectUrlComplete: "/problems"
+        redirectUrl: SITE_MAP.problems.Problems,
+        redirectUrlComplete: SITE_MAP.problems.Problems
       })
     } catch (error) {
       console.log(error)

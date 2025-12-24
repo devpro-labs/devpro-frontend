@@ -7,23 +7,64 @@ import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Play, Send } from 'lucide-react'
 import { EDITOR_LIBS } from '@/lib/get-snippet'
+import { useMutation } from '@tanstack/react-query'
+import { getFileName, getImageName, getLibOrFramework } from './helper'
+import { useAuth } from '@clerk/nextjs'
+import { runCode } from '../api'
+import { Response } from '@/lib/const/response'
 
 interface CodeEditorProps {
   tags?: string[];
   theme?: string;
-  onRunCode?: (code: string, language: string) => void;
-  onSubmitCode?: (code: string, language: string) => void;
+  problemId?: string;
+  runCodeResponse?: Response | null;
+  setRunCodeResponse?: (response: Response | null) => void;
+  isRunning?: boolean;
+  setIsRunning?: (isRunning: boolean) => void;
 }
 
 const CodeEditor = ({
   tags = [],
   theme = 'vs-dark',
-  onRunCode,
-  onSubmitCode,
+  problemId = "",
+  runCodeResponse = null,
+  isRunning = false,
+  setIsRunning = () => {},
+  setRunCodeResponse = () => {}
 }: CodeEditorProps) => {
   const [lib, setLib] = useState("")
   const [selectedLan, setSelectedLan] = useState("javascript")
   const [code, setCode] = useState("")
+  const [image, setImage] = useState("")
+  const [file, setFile] = useState("")
+  const [libOrFramework, setLibOrFramework] = useState("")
+  const {getToken} = useAuth();
+
+  const codeRunnerMutation = useMutation({
+    mutationKey: ['runCode'],
+    mutationFn: async () => {
+      setIsRunning(true);
+      const token = await getToken({template: "devpro-jwt"});
+      return await runCode(
+        token ?? "",
+        problemId,
+        code,
+        image,
+        file,
+        libOrFramework
+      );
+    },
+    onSuccess(data, variables, onMutateResult, context) {
+      console.log("Code run successfully:", data);
+      setRunCodeResponse(data);
+      setIsRunning(false);
+    },
+    onError(error, variables, context) {
+      console.error("Error running code:", error);
+      setIsRunning(false);
+    }
+    
+  })
 
   const availableLibs = useMemo(() => {
     if (tags.length === 0) {
@@ -54,21 +95,23 @@ const CodeEditor = ({
     if (selectedLib) {
       setSelectedLan(selectedLib.language);
       setCode(selectedLib.snippet);
+     
+      setLibOrFramework(getLibOrFramework(selectedLib.language));
+      setFile(getFileName(selectedLib.language));
+      setImage(getImageName(selectedLib.language));
     }
   }
 
   const handleRun = () => {
     console.log("Running code:", code, "Language:", selectedLan);
-    if (onRunCode) {
-      onRunCode(code, selectedLan);
-    }
+    const data =  codeRunnerMutation.mutate();
+    console.log("Run code response:", data);
+
   }
 
   const handleSubmit = () => {
     console.log("Submitting code:", code, "Language:", selectedLan);
-    if (onSubmitCode) {
-      onSubmitCode(code, selectedLan);
-    }
+    
   }
 
   const buttonVariants = {

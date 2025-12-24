@@ -1,5 +1,5 @@
 "use client"
-import { Problem, ProblemDetail } from "@/lib/types";
+import { Problem, ProblemDetail, TestCase } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,10 +7,19 @@ import { motion } from "motion/react";
 
 interface ProblemDetailsProps {
   problem: Problem;
-  details: ProblemDetail;
+  testcases: TestCase[];
 }
 
-const ProblemDetailsPanel = ({ problem, details }: ProblemDetailsProps) => {
+const ProblemDetailsPanel = ({ problem, testcases }: ProblemDetailsProps) => {
+
+  if (problem === undefined) {
+    return <div>No problem data available.</div>;
+  }
+
+  if (testcases === undefined) {
+    return <div>No test case data available.</div>;
+  }
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {
       case "beginner":
@@ -106,20 +115,20 @@ const ProblemDetailsPanel = ({ problem, details }: ProblemDetailsProps) => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ type: "spring", stiffness: 100, damping: 15 }}
           >
-           {details.id} - {details.title}
+            {problem.id} - {problem.title}
           </motion.h1>
-          
+
           <motion.div className="flex flex-wrap gap-2" variants={itemVariants}>
             <motion.div variants={badgeVariants}>
-              <Badge className={getDifficultyColor(details.difficulty)}>
-                {details.difficulty}
+              <Badge className={getDifficultyColor(problem.difficulty)}>
+                {problem.difficulty}
               </Badge>
             </motion.div>
-            <motion.div variants={badgeVariants}>
-              <Badge className={getTechColor(details.tech)}>
-                {details.tech}
+            {/* <motion.div variants={badgeVariants}>
+              <Badge className={getTechColor(problem.tech)}>
+                {problem.tech}
               </Badge>
-            </motion.div>
+            </motion.div> */}
             <motion.div variants={badgeVariants}>
               <Badge variant="outline">{problem.category}</Badge>
             </motion.div>
@@ -151,7 +160,7 @@ const ProblemDetailsPanel = ({ problem, details }: ProblemDetailsProps) => {
               <TabsTrigger value="description">Description</TabsTrigger>
               <TabsTrigger value="examples">Examples</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="description" className="space-y-4 mt-4">
               {/* Problem Statement */}
               <motion.div
@@ -167,12 +176,12 @@ const ProblemDetailsPanel = ({ problem, details }: ProblemDetailsProps) => {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
                 >
-                  {details.problemStatement}
+                  {problem.description}
                 </motion.div>
               </motion.div>
 
               {/* Detailed Explanation */}
-              {details.detailedExplanation && (
+              {/* {problem.detailedExplanation && (
                 <motion.div
                   className="space-y-2"
                   initial={{ opacity: 0, y: 20 }}
@@ -189,72 +198,71 @@ const ProblemDetailsPanel = ({ problem, details }: ProblemDetailsProps) => {
                     {details.detailedExplanation}
                   </motion.div>
                 </motion.div>
-              )}
+              )} */}
             </TabsContent>
 
             <TabsContent value="examples" className="space-y-4 mt-4">
               {/* Sample Test Cases */}
-              {details.sampleTestCases && details.sampleTestCases.length > 0 && (
+              {testcases.map((testCase, index) => (
                 <motion.div
-                  className="space-y-3"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 }}
+                  key={index}
+                  className="border rounded-lg p-4 space-y-4 bg-muted/30"
+                  custom={index}
+                  variants={testCaseVariants}
+                  initial="hidden"
+                  animate="visible"
                 >
-                  <h2 className="text-lg font-semibold">Sample Test Cases</h2>
-                  {details.sampleTestCases.map((testCase, index) => (
-                    <motion.div
-                      key={index}
-                      className="border rounded-lg p-4 space-y-3 bg-muted/30"
-                      custom={index}
-                      variants={testCaseVariants}
-                      initial="hidden"
-                      animate="visible"
-                      whileHover={{
-                        scale: 1.02,
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        transition: { duration: 0.2 }
-                      }}
-                    >
-                      <motion.div
-                        className="font-medium text-sm"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.1 + index * 0.1 }}
-                      >
-                        Example {index + 1}
-                      </motion.div>
-                      
-                      <motion.div
-                        className="space-y-1"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 + index * 0.1 }}
-                      >
-                        <div className="text-xs font-semibold text-muted-foreground">Input:</div>
-                        <pre className="bg-background border rounded p-3 text-xs overflow-x-auto">
-                          <code>{JSON.stringify(testCase.input, null, 2)}</code>
-                        </pre>
-                      </motion.div>
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">
+                      Example {index + 1}
+                    </span>
 
-                      <motion.div
-                        className="space-y-1"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + index * 0.1 }}
-                      >
-                        <div className="text-xs font-semibold text-muted-foreground">Expected Output:</div>
-                        <pre className="bg-background border rounded p-3 text-xs overflow-x-auto">
-                          <code>{JSON.stringify(testCase.expectedOutput, null, 2)}</code>
-                        </pre>
-                      </motion.div>
-                    </motion.div>
-                  ))}
+                    <div className="flex gap-2">
+                      <Badge variant="secondary">
+                        {testCase.method}
+                      </Badge>
+                      <Badge variant="outline">
+                        {testCase.expectedStatus}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Endpoint */}
+                  <div className="text-xs">
+                    <span className="text-muted-foreground font-semibold">
+                      Endpoint:
+                    </span>
+                    <code className="ml-2 bg-background border px-2 py-1 rounded">
+                      {testCase.endpoint}
+                    </code>
+                  </div>
+
+                  {/* Input */}
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-muted-foreground">
+                      Input JSON
+                    </div>
+                    <pre className="bg-background border rounded p-3 text-xs overflow-x-auto">
+                      <code>{JSON.stringify(testCase.inputJson, null, 2)}</code>
+                    </pre>
+                  </div>
+
+                  {/* Expected Output */}
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-muted-foreground">
+                      Expected Output
+                    </div>
+                    <pre className="bg-background border rounded p-3 text-xs overflow-x-auto">
+                      <code>{JSON.stringify(testCase.expectedOutputJson, null, 2)}</code>
+                    </pre>
+                  </div>
                 </motion.div>
-              )}
+              ))}
 
-              {/* Hidden Test Cases Info */}
-              {details.hiddenTestCases && details.hiddenTestCases.length > 0 && (
+
+              {/* Hidden Test Cases Info
+              {testcases && testcases.length > 0 && (
                 <motion.div
                   className="border rounded-lg p-4 bg-muted/20"
                   initial={{ opacity: 0, y: 20 }}
@@ -266,10 +274,10 @@ const ProblemDetailsPanel = ({ problem, details }: ProblemDetailsProps) => {
                   }}
                 >
                   <div className="text-sm text-muted-foreground">
-                    💡 <span className="font-semibold">Note:</span> There are {details.hiddenTestCases.length} additional hidden test case(s) that will be used to evaluate your solution.
+                    💡 <span className="font-semibold">Note:</span> There are {testcases.length} additional hidden test case(s) that will be used to evaluate your solution.
                   </div>
                 </motion.div>
-              )}
+              )} */}
             </TabsContent>
           </Tabs>
         </motion.div>

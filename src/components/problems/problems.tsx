@@ -2,24 +2,30 @@
 
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select'
+
+import { CheckEffected } from './checke-effected'
+import { Difficulty } from '@/lib/types'
 
 export interface Problem {
   id: string
   title: string
   slug: string
-  difficulty: 'easy' | 'medium' | 'hard'
+  difficulty: Difficulty
   category: string
   tags: string[]
   description: string
   isPremium?: boolean
 }
-
-import {  dummyProblems } from '@/data/problems'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
-import { CheckEffected } from './checke-effected'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Difficulty } from '@/lib/types'
 
 
 const difficultyColors: Record<Difficulty, string> = {
@@ -30,28 +36,32 @@ const difficultyColors: Record<Difficulty, string> = {
 }
 
 
-export default function Problems() {
+export default function Problems({ data }: { data: Problem[] }) {
+  // console.log("Problems data in Problems component:", data);
+  const router = useRouter()
+
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('all')
   const [difficulty, setDifficulty] = useState<'all' | Difficulty>('all')
   const [tag, setTag] = useState('all')
-  const solvedIds:any[] = []
-  const router = useRouter();
 
-  const categories = useMemo(
-    () => ['all', ...new Set(dummyProblems.map(p => p.category))],
-    []
-  )
+  // TODO: replace with real solved ids from backend
+  const solvedIds: string[] = []
 
-  const tags = useMemo(
-    () => ['all', ...new Set(dummyProblems.flatMap(p => p.tags))],
-    []
-  )
+
+  const categories = useMemo(() => {
+    return ['all', ...Array.from(new Set(data.map(p => p.category)))]
+  }, [data])
+
+  const tags = useMemo(() => {
+    return ['all', ...Array.from(new Set(data.flatMap(p => p.tags)))]
+  }, [data])
 
   const filteredProblems = useMemo(() => {
-    return dummyProblems.filter(p => {
-      const matchSearch =
-        p.title.toLowerCase().includes(search.toLowerCase())
+    return data.filter(p => {
+      const matchSearch = p.title
+        .toLowerCase()
+        .includes(search.toLowerCase())
 
       const matchCategory =
         category === 'all' || p.category === category
@@ -64,7 +74,8 @@ export default function Problems() {
 
       return matchSearch && matchCategory && matchDifficulty && matchTag
     })
-  }, [search, category, difficulty, tag])
+  }, [data, search, category, difficulty, tag])
+
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -84,26 +95,26 @@ export default function Problems() {
 
         {/* Category */}
         <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger>
             <SelectValue placeholder="Category" />
           </SelectTrigger>
-
           <SelectContent>
-            {categories.map(c => (
-              <SelectItem key={c} value={c}>
+            {categories.map((c,idx) => (
+              <SelectItem key={idx} value={c}>
                 {c}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-
         {/* Difficulty */}
-        <Select value={difficulty} onValueChange={(value) => setDifficulty(value as 'all' | Difficulty)}>
-          <SelectTrigger className="w-full">
+        <Select
+          value={difficulty}
+          onValueChange={v => setDifficulty(v as 'all' | Difficulty)}
+        >
+          <SelectTrigger>
             <SelectValue placeholder="Difficulty" />
           </SelectTrigger>
-
           <SelectContent>
             <SelectItem value="all">All Difficulty</SelectItem>
             <SelectItem value="Beginner">Beginner</SelectItem>
@@ -113,57 +124,55 @@ export default function Problems() {
           </SelectContent>
         </Select>
 
-
-
         {/* Tags */}
         <Select value={tag} onValueChange={setTag}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger>
             <SelectValue placeholder="Tag" />
           </SelectTrigger>
-
           <SelectContent>
-            {tags.map(t => (
-              <SelectItem key={t} value={t}>
+            {tags.map((t, idx) => (
+              <SelectItem key={idx} value={t}>
                 {t}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-
       </div>
 
-      {/* PROBLEMS LIST */}
       <div className="space-y-2">
+        {filteredProblems.length === 0 && (
+          <div className="text-zinc-500 text-center py-10">
+            No problems found
+          </div>
+        )}
+
         {filteredProblems.map((p, index) => {
           const isSolved = solvedIds.includes(p.id)
 
           return (
             <Link
               key={p.id}
-              href={`/problems/${p.slug}`}
+              href={`/problems/${p.id}`}
               className="block"
             >
               <motion.div
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 className="flex items-center justify-between gap-4 p-4 rounded-2xl
-                     bg-zinc-900 border border-zinc-800
-                     hover:border-zinc-600 transition-colors"
+                  bg-zinc-900 border border-zinc-800
+                  hover:border-zinc-600 transition-colors"
               >
                 {/* LEFT */}
                 <div className="flex items-center gap-4 min-w-0">
-                  {/* Number */}
                   <span className="text-zinc-500 w-6 text-right shrink-0">
                     {index + 1}.
                   </span>
 
-                  {/* Solved animation */}
                   <CheckEffected
                     isSolved={isSolved}
                     id={`problem-${p.id}`}
                   />
 
-                  {/* Title */}
                   <h2 className="font-medium truncate">
                     {p.title}
                   </h2>
@@ -177,21 +186,18 @@ export default function Problems() {
                     {p.difficulty}
                   </span>
 
-
-
-                  {/* {p.isPremium && (
+                  {p.isPremium && (
                     <span className="text-xs px-2 py-1 rounded-full
-                               bg-yellow-500/20 text-yellow-400">
+                      bg-yellow-500/20 text-yellow-400">
                       Premium
                     </span>
-                  )} */}
+                  )}
                 </div>
               </motion.div>
             </Link>
           )
         })}
       </div>
-
     </div>
   )
 }
