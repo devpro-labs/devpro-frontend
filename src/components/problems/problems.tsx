@@ -14,12 +14,12 @@ export interface Problem {
   isPremium?: boolean
 }
 
-import { Difficulty, dummyProblems } from '@/data/problems' // or same file
-import { Check } from 'lucide-react'
+import {  dummyProblems } from '@/data/problems'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { CheckEffected } from './checke-effected'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Difficulty } from '@/lib/types'
 
 
 const difficultyColors: Record<Difficulty, string> = {
@@ -35,7 +35,7 @@ export default function Problems() {
   const [category, setCategory] = useState('all')
   const [difficulty, setDifficulty] = useState<'all' | Difficulty>('all')
   const [tag, setTag] = useState('all')
-  const solvedIds = ['2', '5']
+  const solvedIds:any[] = []
   const router = useRouter();
 
   const categories = useMemo(

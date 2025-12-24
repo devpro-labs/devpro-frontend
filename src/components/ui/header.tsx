@@ -6,7 +6,8 @@ import { motion } from "framer-motion"
 import { Code2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useAuth, useUser } from "@clerk/nextjs"
-
+import {Atom } from "react-loading-indicators"
+import Loader from "./Loader"
 interface NavLink {
   name: string
   href: string
@@ -33,7 +34,7 @@ export function Header() {
 
   if (!isLoaded) {
     return (
-      <h1>Loading...</h1>
+      <Loader />
     );
   }
 
