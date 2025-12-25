@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import { useSignUp } from "@clerk/nextjs"
 import OtpVerification from "./otp"
 import Loader from "../ui/Loader"
+import SITE_MAP from "@/lib/const/site_map"
 
 export function SignupForm() {
   const [email, setEmail] = useState("")

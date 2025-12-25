@@ -12,6 +12,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSignIn } from "@clerk/nextjs"
 import Loader from "../ui/Loader"
+import SITE_MAP from "@/lib/const/site_map"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")

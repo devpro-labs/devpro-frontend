@@ -12,3 +12,5 @@ const SITE_MAP = {
     ProblemDetails : (problemId: string) => `/problems/${problemId}`,
   }
 }
+
+export default SITE_MAP;
