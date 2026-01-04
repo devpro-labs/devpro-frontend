@@ -1,6 +1,7 @@
 import { API } from "@/lib/const/api";
 import backendRoute from "@/lib/const/backend_route";
 import { Response } from "@/lib/const/response";
+import { FileItem } from "./right-panal/file-explorer";
 
 const fetchProblems = async (
   token?: string
@@ -25,14 +26,17 @@ const runCode = async (
   code: string,
   image_name: string,
   file_name: string,
-  libOrFramework: string
+  libOrFramework: string,
+  files: FileItem[],
 ): Promise<Response> => {
+  console.log("Running code with file tree:", files);
   const api = await API(token);
   const response = await api.post(backendRoute.code.runCode(problemId),{
     code,
     image_name,
     file_name,
-    libOrFramework
+    libOrFramework,
+    files: files,
   })
 
   return response.data;
