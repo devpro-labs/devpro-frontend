@@ -7,18 +7,25 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { motion } from "framer-motion"
 import { Github } from "lucide-react"
-import { useState } from "react"
+import { use, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useSignIn } from "@clerk/nextjs"
+import { useAuth, useSignIn, useUser } from "@clerk/nextjs"
 import Loader from "../ui/Loader"
 import SITE_MAP from "@/lib/const/site_map"
+import { checkUser } from "./api"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const { isLoaded, signIn, setActive } = useSignIn();
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter();
+  const { getToken } = useAuth()
+  const {user} = useUser()
+  const { signOut } = useAuth();
+
+
   if (!isLoaded) {
     return (
       <>
@@ -27,8 +34,25 @@ export function LoginForm() {
     )
   }
 
+  const checkUserUtil = async () => {
+    const token = await getToken({template: "devpro"}) ?? "";
+      const apiResponse = await checkUser({
+        username: user?.username ?? "",
+        email: user?.primaryEmailAddress?.emailAddress ?? ""
+      }, token);
+
+      if(apiResponse.STATUS != 200){
+        console.log(401);
+        signOut();
+        return;
+      }
+
+      router.push(SITE_MAP.problems.Problems);
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
     // Handle login logic here
     console.log("Login:", { email, password })
     try {
@@ -36,40 +60,51 @@ export function LoginForm() {
         identifier: email,
         password: password
       })
-
       await setActive({ session: res.createdSessionId })
-      router.push(SITE_MAP.problems.Problems);
+      await checkUserUtil();
+      
 
     } catch (error) {
       console.log(error)
+    }finally{
+      setIsLoading(false)
     }
   }
 
   const handleGoogleLogin = async () => {
     // Handle Google OAuth
+    setIsLoading(true)
     console.log("Google login")
     try {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: SITE_MAP.problems.Problems,
-        redirectUrlComplete: SITE_MAP.problems.Problems
+        redirectUrl: SITE_MAP.auth.Login,
+        redirectUrlComplete: SITE_MAP.auth.Login
       })
+
+      await checkUserUtil();
     } catch (error) {
       console.log(error)
+    }finally{
+      setIsLoading(false)
     }
   }
 
   const handleGithubLogin = async () => {
     // Handle GitHub OAuth
     console.log("GitHub login")
+    setIsLoading(true)
     try {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_github",
-        redirectUrl: SITE_MAP.problems.Problems,
-        redirectUrlComplete: SITE_MAP.problems.Problems
+       redirectUrl: SITE_MAP.auth.Login,
+        redirectUrlComplete: SITE_MAP.auth.Login
       })
+       await checkUserUtil();
     } catch (error) {
       console.log(error)
+    }finally{
+      setIsLoading(false)
     }
   }
 
@@ -80,6 +115,7 @@ export function LoginForm() {
       transition={{ duration: 0.5 }}
       viewport={{ once: true }}
     >
+      {isLoading && <Loader />}
       <Card className="p-6 border-border/50">
         <div className="space-y-4">
           <Button type="button" variant="outline" className="w-full bg-transparent" onClick={handleGoogleLogin}>

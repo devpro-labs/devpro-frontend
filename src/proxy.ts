@@ -26,7 +26,7 @@ export default clerkMiddleware(
       }
     }
 
-    NextResponse.next();
+    return NextResponse.next();
   }
 )
 

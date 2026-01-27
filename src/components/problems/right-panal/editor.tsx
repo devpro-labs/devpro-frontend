@@ -24,6 +24,7 @@ interface CodeEditorProps {
   setRunCodeResponse?: (response: Response | null) => void
   isRunning?: boolean
   setIsRunning?: (isRunning: boolean) => void
+  userId?: string
 }
 
 const CodeEditor = ({
@@ -34,7 +35,13 @@ const CodeEditor = ({
   isRunning = false,
   setIsRunning = () => {},
   setRunCodeResponse = () => {},
+  userId = "",
 }: CodeEditorProps) => {
+
+  //conditional states for saving code editor data
+  const MAX_CODE_LEN = 100 //100 characters
+  const LAST_TIME = 15 //15 sec
+
   const [lib, setLib] = useState("")
   const [selectedLan, setSelectedLan] = useState("javascript")
   const [code, setCode] = useState("")
@@ -52,7 +59,7 @@ const CodeEditor = ({
     mutationKey: ["runCode"],
     mutationFn: async () => {
       setIsRunning(true)
-      const token = await getToken({ template: "devpro-jwt" })
+      const token = await getToken({ template: "devpro" })
       return await runCode(token ?? "", problemId, code, image, file, libOrFramework, fileTreeManager!.getFiles())
     },
     onSuccess(data) {
@@ -214,6 +221,15 @@ const CodeEditor = ({
       fileTreeManager.updateFileContent(selectedFileId, newCode)
     }
   }
+
+  useEffect(() => {
+    const storeData = {
+      fileData: fileTreeManager?.getFiles().toString(),
+      timestamp: Date.now(),
+    }
+
+    localStorage.setItem(`draft:${userId}:${problemId}:${selectedLan}`, JSON.stringify(storeData));
+  } ,[code, problemId, selectedLan, fileTreeManager, userId]);
 
   const buttonVariants = {
     hover: { scale: 1.05 },

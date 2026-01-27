@@ -1,3 +1,4 @@
+import { UserExits } from "@/components/signin/type";
 
 export const API_URL = process.env.API_URL || "http://localhost:9000/api";
 
@@ -6,6 +7,9 @@ if (!API_URL) {
 }
 
 const backendRoute = {
+  user:{
+    checkUserInDB:  `/user/login` 
+  },
   problems :{
     getAllProblems: `/problems`,
     getProblemById: (problemId: string) => `/problems/${problemId}`,

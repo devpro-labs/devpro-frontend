@@ -1,5 +1,5 @@
 export interface Response{
-  SUCCESS : string;
+  SUCCESS : boolean;
   ERROR : string;
   STATUS : number;
   DATA: any;

@@ -16,7 +16,7 @@ import { useState } from 'react';
 const page = () => {
   const parmas = useParams();
   const { slug } = parmas;
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
   const [runCodeResponse, setRunCodeResponse] = useState<Response | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -54,6 +54,7 @@ const page = () => {
             </TabsList>
             <TabsContent value="code" className="flex-1 overflow-hidden">
               <CodeEditor
+              userId={userId ?? ""}
                 isRunning={isRunning}
                 setIsRunning={setIsRunning}
                 runCodeResponse={runCodeResponse}
