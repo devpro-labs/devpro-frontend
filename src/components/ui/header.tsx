@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { Code2 } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useAuth, useUser } from "@clerk/nextjs"
+import { SignInButton, useAuth, useUser } from "@clerk/nextjs"
 import {Atom } from "react-loading-indicators"
 import Loader from "./Loader"
 interface NavLink {
@@ -89,9 +89,7 @@ export function Header() {
           )}
 
           {!isSignedIn && (
-            <Button asChild>
-              <Link href="/signup">Get Started</Link>
-            </Button>
+            <SignInButton />
           )}
         </div>
       </div>
