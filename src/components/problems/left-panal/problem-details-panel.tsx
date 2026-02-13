@@ -115,7 +115,7 @@ const ProblemDetailsPanel = ({ problem, testcases }: ProblemDetailsProps) => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ type: "spring", stiffness: 100, damping: 15 }}
           >
-            {problem.id} - {problem.title}
+            {problem.title}
           </motion.h1>
 
           <motion.div className="flex flex-wrap gap-2" variants={itemVariants}>

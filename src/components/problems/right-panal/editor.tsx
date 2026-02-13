@@ -15,6 +15,7 @@ import Editor from "@monaco-editor/react"
 import { runCode } from "../api"
 import type { Response } from "@/lib/const/response"
 import { useMutation } from "@tanstack/react-query"
+import Loader from "@/components/ui/Loader"
 
 interface CodeEditorProps {
   tags?: string[]
@@ -25,6 +26,7 @@ interface CodeEditorProps {
   isRunning?: boolean
   setIsRunning?: (isRunning: boolean) => void
   userId?: string
+  onExecutionStart?: (executionId: string) => void
 }
 
 const CodeEditor = ({
@@ -33,10 +35,9 @@ const CodeEditor = ({
   problemId = "",
   runCodeResponse = null,
   isRunning = false,
-  setIsRunning = () => {},
-  setRunCodeResponse = () => {},
-  userId = "",
-}: CodeEditorProps) => {
+  setIsRunning = () => { },
+  setRunCodeResponse = () => { },
+  userId = "", onExecutionStart, }: CodeEditorProps) => {
 
   //conditional states for saving code editor data
   const MAX_CODE_LEN = 100 //100 characters
@@ -65,7 +66,15 @@ const CodeEditor = ({
     onSuccess(data) {
       console.log("Code run successfully:", data)
       setRunCodeResponse(data)
-      setIsRunning(false)
+
+      // If response contains executionId, connect to WebSocket
+      if (data?.DATA?.executionId && onExecutionStart) {
+        console.log("🚀 Starting execution with ID:", data.DATA.executionId)
+        onExecutionStart(data.DATA.executionId)
+      } else {
+        // No executionId means we got direct result, stop running
+        setIsRunning(false)
+      }
     },
     onError() {
       console.error("Error running code")
@@ -229,15 +238,20 @@ const CodeEditor = ({
     }
 
     localStorage.setItem(`draft:${userId}:${problemId}:${selectedLan}`, JSON.stringify(storeData));
-  } ,[code, problemId, selectedLan, fileTreeManager, userId]);
+  }, [code, problemId, selectedLan, fileTreeManager, userId]);
 
   const buttonVariants = {
     hover: { scale: 1.05 },
     tap: { scale: 0.95 },
   }
 
+
+
   return (
     <div className="flex flex-col h-full bg-black">
+      {/* {isRunning && (
+        <Loader />
+      )} */}
       <motion.div
         className="flex items-center gap-4 p-4 px-5 border-b border-zinc-800 bg-zinc-950 min-h-16"
         initial={{ opacity: 0, y: -20 }}
@@ -354,17 +368,16 @@ const CodeEditor = ({
                   <div
                     key={tabId}
                     onClick={() => handleSelectFile(tabId)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded cursor-pointer transition-all group ${
-                      isActive
-                        ? "bg-zinc-800 border border-zinc-700 text-gray-100"
-                        : "bg-black hover:bg-zinc-900 text-gray-400"
-                    }`}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded cursor-pointer transition-all group ${isActive
+                      ? "bg-zinc-800 border border-zinc-700 text-gray-100"
+                      : "bg-black hover:bg-zinc-900 text-gray-400"
+                      }`}
                   >
                     <FileText className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm font-medium whitespace-nowrap">{tabItem.name}</span>
                     {!tabItem.isMainFile && (
                       <button
-                      title="Close tab"
+                        title="Close tab"
                         onClick={(e) => handleCloseTab(tabId, e)}
                         className="ml-1 p-0.5 hover:bg-zinc-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                       >

@@ -10,46 +10,81 @@ import {
   XCircle,
   Clock,
   AlertCircle,
+  Terminal as TerminalIcon,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Loader from "../ui/Loader";
+import Terminal, { LogEntry } from "./terminal";
 
 interface TestCasesPanelProps {
   sampleTestCases: TestCase[];
   runCodeResponse?: any;
   isRunning?: boolean;
+  isConnecting?: boolean;
+  logs?: LogEntry[];
+  isConnected?: boolean;
+  testResult?: TestResult | null;
+  onClose?: () => void;
+}
+
+interface TestReport {
+  testCaseNo: number;
+  status: "PASSED" | "FAILED";
+  error?: string;
 }
 
 interface TestResult {
-  error?: string;
-  ActualBody?: any;
-  ExpectedBody?: any;
-  ActualStatus?: number;
-  ExpectedStatus?: number;
-  TotalTestcases?: number;
-  LastTestCase?: number;
-  PassedTestcases?: number;
+  TotalTestcases: number;
+  PassedTestcases: number;
+  FailedTestcases: number;
+  Reports: TestReport[];
 }
 
 const TestCasesPanel = ({
   sampleTestCases,
   runCodeResponse,
   isRunning,
+  isConnecting = false,
+  logs = [],
+  isConnected = false,
+  testResult: wsTestResult,
+  onClose,
 }: TestCasesPanelProps) => {
   const [activeTab, setActiveTab] = useState("testcases");
 
-  const data: TestResult | null = runCodeResponse?.DATA ?? null;
+  // Use WebSocket test result if available, otherwise fall back to runCodeResponse
+  const data: TestResult | null = wsTestResult ?? runCodeResponse?.DATA ?? null;
+
+  // Switch to terminal tab when running starts
+  useEffect(() => {
+    if (isRunning) {
+      setActiveTab("terminal");
+    }
+  }, [isRunning]);
+
+  // Switch to output tab when test results arrive
+  useEffect(() => {
+    if (data && !isRunning) {
+      setActiveTab("output");
+    }
+  }, [data, isRunning]);
 
   const total = data?.TotalTestcases ?? 0;
   const passed = data?.PassedTestcases ?? 0;
-  const failed = total - passed;
+  const failed = data?.FailedTestcases ?? 0;
+  const reports = data?.Reports ?? [];
 
-  if (isRunning) {
-    return <Loader />;
-  }
+  // Get report for a specific test case
+  const getReport = (testCaseNo: number): TestReport | undefined => {
+    return reports.find((r) => r.testCaseNo === testCaseNo);
+  };
 
   return (
-    <ScrollArea className="h-full">
+    <ScrollArea className="h-full relative">
+      {/* Loader overlay */}
+      {/* {isRunning && <Loader />} */}
+
       <div className="h-full flex flex-col bg-background border-t">
         <Tabs
           value={activeTab}
@@ -65,6 +100,16 @@ const TestCasesPanel = ({
                   Test Cases ({sampleTestCases.length})
                 </TabsTrigger>
 
+                <TabsTrigger value="terminal" className="gap-2">
+                  <TerminalIcon className="w-4 h-4" />
+                  Terminal
+                  {logs.length > 0 && (
+                    <Badge variant="secondary" className="ml-1">
+                      {logs.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+
                 <TabsTrigger value="output" className="gap-2">
                   <Clock className="w-4 h-4" />
                   Output
@@ -75,6 +120,16 @@ const TestCasesPanel = ({
                   )}
                 </TabsTrigger>
               </TabsList>
+
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="p-1 hover:bg-muted rounded transition-colors"
+                  title="Close panel"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -83,10 +138,9 @@ const TestCasesPanel = ({
               <div className="p-4 space-y-3">
                 {sampleTestCases.map((testCase, index) => {
                   const testIndex = index + 1;
-
-                  const isPassed = data && testIndex <= passed;
-                  const isFailed =
-                    data && testIndex === data.LastTestCase;
+                  const report = getReport(testIndex);
+                  const isPassed = report?.status === "PASSED";
+                  const isFailed = report?.status === "FAILED";
 
                   return (
                     <motion.div
@@ -160,6 +214,10 @@ const TestCasesPanel = ({
             </ScrollArea>
           </TabsContent>
 
+          <TabsContent value="terminal" className="flex-1 p-0 mt-0">
+            <Terminal logs={logs} isConnected={isConnected} isConnecting={isConnecting} className="h-full rounded-none border-0" />
+          </TabsContent>
+
           <TabsContent value="output" className="flex-1 p-0 mt-0">
             <ScrollArea className="h-full">
               <AnimatePresence mode="wait">
@@ -214,46 +272,48 @@ const TestCasesPanel = ({
                       </div>
                     </div>
 
-                    {/* FAILED DETAILS */}
-                    {failed > 0 && (
-                      <div className="border rounded-lg overflow-hidden bg-black">
-                        <div className="p-3  border-b">
-                          <span className="font-semibold text-sm ">
-                            Failed at Test Case {data.LastTestCase}
-                          </span>
-                        </div>
-
-                        <div className="p-4 space-y-3">
-                          <div>
-                            <div className="text-xs font-semibold  bg-black">
-                              Expected Status
+                    {/* TEST CASE DETAILS */}
+                    {reports.length > 0 && (
+                      <div className="space-y-3">
+                        {reports.map((report) => (
+                          <div
+                            key={report.testCaseNo}
+                            className={`border rounded-lg overflow-hidden ${report.status === "PASSED"
+                              ? "border-green-500/30 bg-green-500/5"
+                              : "border-red-500/30 bg-red-500/5"
+                              }`}
+                          >
+                            <div className="p-3 border-b flex items-center gap-2">
+                              {report.status === "PASSED" ? (
+                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <XCircle className="w-4 h-4 text-red-600" />
+                              )}
+                              <span className="font-semibold text-sm">
+                                Test Case {report.testCaseNo}
+                              </span>
+                              <Badge
+                                className={`ml-auto ${report.status === "PASSED"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                                  }`}
+                              >
+                                {report.status}
+                              </Badge>
                             </div>
-                            <pre className="bg-muted/50 p-3 rounded text-xs">
-                              {data.ExpectedStatus}
-                            </pre>
-                          </div>
 
-                          <div>
-                            <div className="text-xs font-semibold text-muted-foreground">
-                              Actual Status
-                            </div>
-                            <pre className=" p-3 rounded text-xs">
-                              {data.ActualStatus}
-                            </pre>
+                            {report.status === "FAILED" && report.error && (
+                              <div className="p-4">
+                                <div className="text-xs font-semibold text-red-600 mb-2">
+                                  Error
+                                </div>
+                                <pre className="bg-red-500/10 p-3 rounded text-xs text-red-600">
+                                  {report.error}
+                                </pre>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* RUNTIME ERROR */}
-                    {data.error && (
-                      <div className="border border-red-200  p-4 rounded">
-                        <div className="text-sm font-semibold text-red-600 mb-2">
-                          Runtime Error
-                        </div>
-                        <pre className="text-xs text-red-600">
-                          {data.error}
-                        </pre>
+                        ))}
                       </div>
                     )}
                   </motion.div>

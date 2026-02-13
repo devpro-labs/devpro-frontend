@@ -3,11 +3,11 @@
 const getFileName = (language: string): string => {
   switch (language.toLowerCase()) {
     case 'python':
-      return 'main.py';
+      return 'index.py';
     case 'javascript':
-      return 'server.js';
+      return 'index.js';
     case 'typescript':
-      return 'server.ts';
+      return 'index.ts';
     default:
       throw new Error(`Unsupported language: ${language}`);
   }
@@ -42,11 +42,11 @@ const getImageName = (language: string): string => {
 const getLibOrFramework = (language: string): string => {
   switch (language.toLowerCase()) {
     case 'python':
-      return 'fastapi';
+      return 'py-fastapi';
     case 'javascript':
-      return 'express';
+      return 'js-express';
     case 'typescript':
-      return 'express';
+      return 'ts-express';
     default:
       throw new Error(`Unsupported language: ${language}`);
   }
