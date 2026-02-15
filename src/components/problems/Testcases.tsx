@@ -9,12 +9,12 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  AlertCircle,
   Terminal as TerminalIcon,
   X,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import Loader from "../ui/Loader";
 import Terminal, { LogEntry } from "./terminal";
 
 interface TestCasesPanelProps {
@@ -26,6 +26,8 @@ interface TestCasesPanelProps {
   isConnected?: boolean;
   testResult?: TestResult | null;
   onClose?: () => void;
+  setIsPanelMinimized: (minimized: boolean) => void;
+  isPanelMinimized: boolean;
 }
 
 interface TestReport {
@@ -50,277 +52,194 @@ const TestCasesPanel = ({
   isConnected = false,
   testResult: wsTestResult,
   onClose,
+  isPanelMinimized,
+  setIsPanelMinimized
 }: TestCasesPanelProps) => {
   const [activeTab, setActiveTab] = useState("testcases");
 
-  // Use WebSocket test result if available, otherwise fall back to runCodeResponse
   const data: TestResult | null = wsTestResult ?? runCodeResponse?.DATA ?? null;
 
   // Switch to terminal tab when running starts
   useEffect(() => {
     if (isRunning) {
       setActiveTab("terminal");
+      // Auto-expand panel when running starts so user can see output
+      setIsPanelMinimized(false);
     }
   }, [isRunning]);
 
-  // Switch to output tab when test results arrive
-  useEffect(() => {
-    if (data && !isRunning) {
-      setActiveTab("output");
-    }
-  }, [data, isRunning]);
 
   const total = data?.TotalTestcases ?? 0;
   const passed = data?.PassedTestcases ?? 0;
   const failed = data?.FailedTestcases ?? 0;
   const reports = data?.Reports ?? [];
 
-  // Get report for a specific test case
   const getReport = (testCaseNo: number): TestReport | undefined => {
     return reports.find((r) => r.testCaseNo === testCaseNo);
   };
 
   return (
-    <ScrollArea className="h-full relative">
-      {/* Loader overlay */}
-      {/* {isRunning && <Loader />} */}
-
-      <div className="h-full flex flex-col bg-background border-t">
+    <ScrollArea className="h-full">
+      <div className="flex flex-col bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="h-full flex flex-col"
+          className="flex flex-col h-full"
         >
-          {/* HEADER */}
-          <div className="border-b">
-            <div className="flex items-center justify-between px-4 py-2 bg-muted/30">
-              <TabsList className="bg-transparent">
-                <TabsTrigger value="testcases" className="gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  Test Cases ({sampleTestCases.length})
-                </TabsTrigger>
+          {/* HEADER — always visible */}
+          <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-zinc-800 shrink-0">
+            <TabsList className="bg-zinc-800 h-8">
+              <TabsTrigger value="testcases" className="text-xs h-7 px-3">
+                Test Cases ({sampleTestCases.length})
+              </TabsTrigger>
 
-                <TabsTrigger value="terminal" className="gap-2">
-                  <TerminalIcon className="w-4 h-4" />
-                  Terminal
-                  {logs.length > 0 && (
-                    <Badge variant="secondary" className="ml-1">
-                      {logs.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-
-                <TabsTrigger value="output" className="gap-2">
-                  <Clock className="w-4 h-4" />
-                  Output
-                  {data && (
-                    <Badge variant="secondary" className="ml-1">
-                      {passed}/{total}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-              </TabsList>
-
-              {onClose && (
-                <button
-                  onClick={onClose}
-                  className="p-1 hover:bg-muted rounded transition-colors"
-                  title="Close panel"
+              <TabsTrigger value="terminal" className="text-xs h-7 px-3 gap-1.5">
+              <TerminalIcon className="w-3 h-3" />
+              Terminal
+              {logs.length > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="h-4 px-1 text-xs bg-zinc-700 text-zinc-300"
                 >
-                  <X className="w-4 h-4" />
-                </button>
+                  {logs.length}
+                </Badge>
               )}
+            </TabsTrigger>
+            </TabsList>
+
+            <div className="flex items-center gap-1">
+              {/* Minimize / Maximize the whole panel */}
+              <button
+                onClick={() => setIsPanelMinimized((prev) => !prev)}
+                className="p-1 hover:bg-zinc-800 rounded transition-colors"
+                title={isPanelMinimized ? "Expand panel" : "Collapse panel"}
+              >
+                {isPanelMinimized ? (
+                  <ChevronUp className="w-4 h-4 text-zinc-400" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-zinc-400" />
+                )}
+              </button>
+
+
             </div>
           </div>
 
-          <TabsContent value="testcases" className="flex-1 p-0 mt-0">
-            <ScrollArea className="h-full">
-              <div className="p-4 space-y-3">
-                {sampleTestCases.map((testCase, index) => {
-                  const testIndex = index + 1;
-                  const report = getReport(testIndex);
-                  const isPassed = report?.status === "PASSED";
-                  const isFailed = report?.status === "FAILED";
+          {/* PANEL BODY — hidden when minimized */}
+          <AnimatePresence initial={false}>
+            {!isPanelMinimized && (
+              <motion.div
+                key="panel-body"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                {/* TEST CASES TAB */}
+                <TabsContent
+                  value="testcases"
+                  className="h-auto overflow-auto"
+                >
+                  {/* <ScrollArea className="h-96"> */}
+                  <div className="p-4 space-y-3">
+                    {sampleTestCases.map((testCase, index) => {
+                      const testIndex = index + 1;
+                      const report = getReport(testIndex);
+                      const isPassed = report?.status === "PASSED";
+                      const isFailed = report?.status === "FAILED";
 
-                  return (
-                    <motion.div
-                      key={index}
-                      whileHover={{ scale: 1.01 }}
-                      className="border rounded-lg bg-card overflow-hidden"
-                    >
-                      {/* HEADER */}
-                      <div className="flex items-center justify-between p-3 bg-muted/40 border-b">
-                        <div className="flex items-center gap-3">
-                          <span className="font-semibold text-sm">
-                            Test Case {testIndex}
-                          </span>
-
-                          <Badge variant="secondary">
-                            {testCase.method}
-                          </Badge>
-
-                          <Badge variant="outline">
-                            {testCase.expectedStatus}
-                          </Badge>
-
-                          {isPassed && (
-                            <Badge className="bg-green-100 text-green-800">
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              Passed
+                      return (
+                        <motion.div
+                          key={testIndex}
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className={`rounded-lg border p-4 space-y-3 ${isPassed
+                            ? "border-emerald-800 bg-emerald-950/30"
+                            : isFailed
+                              ? "border-red-800 bg-red-950/30"
+                              : "border-zinc-800 bg-zinc-900/50"
+                            }`}
+                        >
+                          {/* Header */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-semibold text-zinc-300">
+                              Test Case {testIndex}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className="text-xs h-5 border-zinc-700 text-zinc-400"
+                            >
+                              {testCase.method}
                             </Badge>
-                          )}
-
-                          {isFailed && (
-                            <Badge className="bg-red-100 text-red-800">
-                              <XCircle className="w-3 h-3 mr-1" />
-                              Failed
+                            <Badge
+                              variant="outline"
+                              className="text-xs h-5 border-zinc-700 text-zinc-400"
+                            >
+                              {testCase.expectedStatus}
                             </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* BODY */}
-                      <div className="p-4 space-y-3">
-                        <div>
-                          <div className="text-xs font-semibold text-muted-foreground mb-2">
-                            Input
-                          </div>
-                          <pre className="bg-muted/50 rounded-md p-3 text-xs border">
-                            {JSON.stringify(
-                              testCase.inputJson,
-                              null,
-                              2
-                            )}
-                          </pre>
-                        </div>
-
-                        <div>
-                          <div className="text-xs font-semibold text-muted-foreground mb-2">
-                            Expected Output
-                          </div>
-                          <pre className="bg-muted/50 rounded-md p-3 text-xs border">
-                            {JSON.stringify(
-                              testCase.expectedOutputJson,
-                              null,
-                              2
-                            )}
-                          </pre>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="terminal" className="flex-1 p-0 mt-0">
-            <Terminal logs={logs} isConnected={isConnected} isConnecting={isConnecting} className="h-full rounded-none border-0" />
-          </TabsContent>
-
-          <TabsContent value="output" className="flex-1 p-0 mt-0">
-            <ScrollArea className="h-full">
-              <AnimatePresence mode="wait">
-                {/* EMPTY */}
-                {!data && !isRunning && (
-                  <motion.div
-                    key="empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground p-8"
-                  >
-                    <AlertCircle className="w-16 h-16 mb-4 opacity-30" />
-                    <p className="text-sm font-medium">
-                      No tests run yet
-                    </p>
-                    <p className="text-xs mt-1">
-                      Submit your code to see results
-                    </p>
-                  </motion.div>
-                )}
-
-                {/* RESULT */}
-                {data && !isRunning && (
-                  <motion.div
-                    key="result"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="p-4 space-y-4"
-                  >
-                    {/* SUMMARY */}
-                    <div className="border rounded-lg p-4 bg-muted/30">
-                      <h3 className="font-semibold text-sm mb-2">
-                        Execution Summary
-                      </h3>
-                      <div className="flex gap-6">
-                        <div>
-                          <div className="text-2xl font-bold text-green-600">
-                            {passed}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Passed
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-2xl font-bold text-red-600">
-                            {failed}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Failed
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* TEST CASE DETAILS */}
-                    {reports.length > 0 && (
-                      <div className="space-y-3">
-                        {reports.map((report) => (
-                          <div
-                            key={report.testCaseNo}
-                            className={`border rounded-lg overflow-hidden ${report.status === "PASSED"
-                              ? "border-green-500/30 bg-green-500/5"
-                              : "border-red-500/30 bg-red-500/5"
-                              }`}
-                          >
-                            <div className="p-3 border-b flex items-center gap-2">
-                              {report.status === "PASSED" ? (
-                                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                              ) : (
-                                <XCircle className="w-4 h-4 text-red-600" />
-                              )}
-                              <span className="font-semibold text-sm">
-                                Test Case {report.testCaseNo}
-                              </span>
-                              <Badge
-                                className={`ml-auto ${report.status === "PASSED"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                                  }`}
-                              >
-                                {report.status}
+                            {isPassed && (
+                              <Badge className="text-xs h-5 bg-emerald-900 text-emerald-300 border-emerald-700 gap-1">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Passed
                               </Badge>
-                            </div>
-
-                            {report.status === "FAILED" && report.error && (
-                              <div className="p-4">
-                                <div className="text-xs font-semibold text-red-600 mb-2">
-                                  Error
-                                </div>
-                                <pre className="bg-red-500/10 p-3 rounded text-xs text-red-600">
-                                  {report.error}
-                                </pre>
-                              </div>
+                            )}
+                            {isFailed && (
+                              <Badge className="text-xs h-5 bg-red-900 text-red-300 border-red-700 gap-1">
+                                <XCircle className="w-3 h-3" />
+                                Failed
+                              </Badge>
                             )}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </ScrollArea>
-          </TabsContent>
+
+                          {/* Body */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">
+                                Input
+                              </p>
+                              <pre className="text-xs bg-zinc-950 rounded p-2 border border-zinc-800 text-zinc-300 overflow-auto max-h-32">
+                                {JSON.stringify(testCase.inputJson, null, 2)}
+                              </pre>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">
+                                Expected Output
+                              </p>
+                              <pre className="text-xs bg-zinc-950 rounded p-2 border border-zinc-800 text-zinc-300 overflow-auto max-h-32">
+                                {JSON.stringify(
+                                  testCase.expectedOutputJson,
+                                  null,
+                                  2
+                                )}
+                              </pre>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                  {/* </ScrollArea> */}
+                </TabsContent>
+
+                {/* TERMINAL TAB — forceMount keeps logs alive across tab switches */}
+                <TabsContent
+                value="terminal"
+                forceMount
+                className={`mt-0 p-4 ${activeTab !== "terminal" ? "hidden" : ""}`}
+              >
+                  <Terminal
+                    logs={logs}
+                    isConnected={isConnected}
+                    isConnecting={isConnecting}
+                  />
+              </TabsContent>
+
+
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Tabs>
       </div>
     </ScrollArea>

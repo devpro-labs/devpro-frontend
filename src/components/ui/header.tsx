@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import { Code2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { SignInButton, useAuth, useUser } from "@clerk/nextjs"
-import {Atom } from "react-loading-indicators"
+import { Atom } from "react-loading-indicators"
 import Loader from "./Loader"
 interface NavLink {
   name: string
@@ -26,6 +26,7 @@ export function Header() {
   const authLinks: Array<NavLink> = [
     ...navLinks,
     { name: "Problems", href: "/problems" },
+    { name: "Profile", href: `/profile/${user?.username || 'me'}` },
   ];
 
   const { signOut } = useAuth();

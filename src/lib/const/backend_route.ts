@@ -22,6 +22,12 @@ const backendRoute = {
     runCode: (id: string) => `/code-runner/run/${id}`,
     submitCode: (id: string) => `/code-runner/submit/${id}`,
   },
+  profile: {
+    getProfile: (username: string) => `/user/profile/${username}`,
+  },
+  submission: {
+    getSubmissions: (problemId: string) => `/submissions/${problemId}`,
+  },
   ws: {
     execution: (executionId: string) => `/ws/execution/${executionId}`,
   },

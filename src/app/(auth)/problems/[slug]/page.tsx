@@ -1,10 +1,11 @@
 "use client"
-import { fetchSampleTestCases } from '@/components/problems/api';
-import ProblemDetailsPanel from '@/components/problems/left-panal/problem-details-panel';
+import { fetchSampleTestCases, fetchSubmissions } from '@/components/problems/api';
+import LeftPanelWrapper from '@/components/problems/left-panal/left-panel-wrapper';
 import CodeEditor from '@/components/problems/right-panal/editor';
 import TestCasesPanel from '@/components/problems/Testcases';
 import Loader from '@/components/ui/Loader';
 import { Response } from '@/lib/const/response';
+import { Submission } from '@/lib/types';
 import { useAuth } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
 import { useExecutionSocket } from '@/hooks/use-execution-socket';
@@ -20,6 +21,8 @@ const page = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isPanelMinimized, setIsPanelMinimized] = useState(false);
+  const [isLoading, setIsLoading] = useState(false)
 
   // WebSocket hook for execution events
   const {
@@ -64,23 +67,54 @@ const page = () => {
   const problemQuery = useQuery({
     queryKey: ['problem', slug],
     queryFn: () => {
-      return getToken().then((token) => fetchSampleTestCases(token ?? "", slug));
+      setIsLoading(true);
+      const data =  getToken().then((token) => fetchSampleTestCases(token ?? "", slug));
+      setIsLoading(false);
+      return data;
     }
   })
 
   const res: Response | undefined = problemQuery.data;
+  const problemId = res?.DATA?.problem?.id;
+
+  const submissionsQuery = useQuery({
+    queryKey: ['submissions', problemId],
+    queryFn: async () => {
+      setIsLoading(true);
+      const token = await getToken();
+      const data = fetchSubmissions(token ?? "", problemId ?? "");
+      setIsLoading(false);
+      return data;
+    },
+    enabled: !!problemId,
+  });
+
+  const submissions: Submission[] = submissionsQuery.data ?? [];
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+    <div className="flex h-[calc(100vh)] overflow-hidden">
       {/* Left Panel - 35% width */}
-      <div className="w-[35%] min-w-[300px] h-full overflow-hidden border-r border-zinc-800">
-        {res && <ProblemDetailsPanel problem={res?.DATA?.problem} testcases={res?.DATA.testCases} />}
+      <div className="w-[35%] min-w-75 h-full overflow-hidden border-r border-zinc-800">
+        {res && (
+          <LeftPanelWrapper
+            problem={res?.DATA?.problem}
+            testcases={res?.DATA.testCases}
+            submissions={submissions}
+            isSubmissionsLoading={submissionsQuery.isLoading}
+          />
+        )}
       </div>
 
       {/* Right Panel - 65% width */}
       <div className="w-[65%] h-full flex flex-col overflow-hidden">
         {/* Code Editor - 60% or 100% if terminal closed */}
-        <div className={terminalOpen ? "h-[60%]" : "h-full"}>
+        <div className={
+          !terminalOpen
+            ? "h-full"
+            : isPanelMinimized
+              ? "h-[calc(100%-3rem)]"
+              : "h-[60%]"
+        }>
           <CodeEditor
             userId={userId ?? ""}
             isRunning={isRunning}
@@ -94,8 +128,9 @@ const page = () => {
         </div>
 
         {/* Terminal/TestCases Panel - Fixed 40% height */}
+        {/* Terminal/TestCases Panel */}
         {terminalOpen && (
-          <div className="h-[40%] border-t border-zinc-800">
+          <div className={`border-t border-zinc-800 shrink-0 ${isPanelMinimized ? "h-12" : "h-[40%]"}`}>
             <TestCasesPanel
               isRunning={isRunning}
               isConnecting={isConnecting}
@@ -105,6 +140,8 @@ const page = () => {
               isConnected={isConnected}
               testResult={testResult}
               onClose={() => setTerminalOpen(false)}
+              isPanelMinimized={isPanelMinimized}
+              setIsPanelMinimized={setIsPanelMinimized}
             />
           </div>
         )}

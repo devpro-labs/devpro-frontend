@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import type React from "react"
 
 import { FileExplorer, type FileItem } from "./file-explorer"
@@ -12,10 +12,11 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { FilePlus, FolderPlus, Minimize2, Maximize2, Play, Send, FileText, X } from "lucide-react"
 import Editor from "@monaco-editor/react"
-import { runCode } from "../api"
+import { runCode, submitCode } from "../api"
 import type { Response } from "@/lib/const/response"
 import { useMutation } from "@tanstack/react-query"
 import Loader from "@/components/ui/Loader"
+import { useCodeDraftStore } from "@/store/use-code-draft-store"
 
 interface CodeEditorProps {
   tags?: string[]
@@ -56,12 +57,43 @@ const CodeEditor = ({
   const [explorerOpen, setExplorerOpen] = useState(true)
   const { getToken } = useAuth()
 
+  // Zustand store for code drafts
+  const { saveDraft, getDraft } = useCodeDraftStore()
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const hasLoadedDraft = useRef(false)
+
   const codeRunnerMutation = useMutation({
     mutationKey: ["runCode"],
     mutationFn: async () => {
       setIsRunning(true)
       const token = await getToken({ template: "devpro" })
       return await runCode(token ?? "", problemId, code, image, file, libOrFramework, fileTreeManager!.getFiles())
+    },
+    onSuccess(data) {
+      console.log("Code run successfully:", data)
+      setRunCodeResponse(data)
+
+      // If response contains executionId, connect to WebSocket
+      if (data?.DATA?.executionId && onExecutionStart) {
+        console.log("🚀 Starting execution with ID:", data.DATA.executionId)
+        onExecutionStart(data.DATA.executionId)
+      } else {
+        // No executionId means we got direct result, stop running
+        setIsRunning(false)
+      }
+    },
+    onError() {
+      console.error("Error running code")
+      setIsRunning(false)
+    },
+  })
+
+  const codeSubmitMutation = useMutation({
+    mutationKey: ["runCode"],
+    mutationFn: async () => {
+      setIsRunning(true)
+      const token = await getToken({ template: "devpro" })
+      return await submitCode(token ?? "", problemId, code, image, file, libOrFramework, fileTreeManager!.getFiles())
     },
     onSuccess(data) {
       console.log("Code run successfully:", data)
@@ -160,6 +192,7 @@ const CodeEditor = ({
 
   const handleSubmit = () => {
     console.log("Submitting code:", code, "Language:", selectedLan)
+    codeSubmitMutation.mutate()
   }
 
   const handleCreateFile = (name: string, parentId?: string) => {
@@ -231,14 +264,69 @@ const CodeEditor = ({
     }
   }
 
+  // Auto-save to zustand store with debounce
+  const saveToStore = useCallback(() => {
+    if (!fileTreeManager || !problemId || !libOrFramework) return
+
+    saveDraft(problemId, libOrFramework, {
+      fileTree: fileTreeManager.getFiles(),
+      selectedFileId,
+      openTabs,
+      code,
+    })
+  }, [fileTreeManager, problemId, libOrFramework, selectedFileId, openTabs, code, saveDraft])
+
   useEffect(() => {
-    const storeData = {
-      fileData: fileTreeManager?.getFiles().toString(),
-      timestamp: Date.now(),
+    // Don't save until initial load is complete
+    if (!hasLoadedDraft.current) return
+    if (!problemId || !libOrFramework) return
+
+    // Debounce save - wait 1 second after last change
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
     }
 
-    localStorage.setItem(`draft:${userId}:${problemId}:${selectedLan}`, JSON.stringify(storeData));
-  }, [code, problemId, selectedLan, fileTreeManager, userId]);
+    saveTimeoutRef.current = setTimeout(() => {
+      saveToStore()
+    }, 1000)
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+    }
+  }, [code, openTabs, selectedFileId, problemId, libOrFramework, saveToStore])
+
+  // Load saved draft when framework changes
+  useEffect(() => {
+    if (!problemId || !libOrFramework || !fileTreeManager) return
+
+    const draft = getDraft(problemId, libOrFramework)
+    if (draft && draft.fileTree.length > 0) {
+      // Restore from saved draft
+      const manager = new FileTreeManager()
+      draft.fileTree.forEach(item => {
+        if (item.isFolder) {
+          const folder = manager.addFolder(item.name)
+          folder.id = item.id
+        } else {
+          const file = manager.addFile(item.name)
+          file.id = item.id
+          file.content = item.content
+          file.isMainFile = item.isMainFile
+        }
+      })
+      setFileTreeManager(manager)
+      setFileTree(manager.getFiles())
+      setSelectedFileId(draft.selectedFileId)
+      setOpenTabs(draft.openTabs)
+      setCode(draft.code)
+
+      console.log("📂 Restored draft for", problemId, libOrFramework)
+    }
+
+    hasLoadedDraft.current = true
+  }, [problemId, libOrFramework, getDraft])
 
   const buttonVariants = {
     hover: { scale: 1.05 },
@@ -249,9 +337,9 @@ const CodeEditor = ({
 
   return (
     <div className="flex flex-col h-full bg-black">
-      {/* {isRunning && (
+      {isRunning && (
         <Loader />
-      )} */}
+      )}
       <motion.div
         className="flex items-center gap-4 p-4 px-5 border-b border-zinc-800 bg-zinc-950 min-h-16"
         initial={{ opacity: 0, y: -20 }}
@@ -358,7 +446,7 @@ const CodeEditor = ({
         >
           {/* File Tabs Bar */}
           {openTabs.length > 0 && fileTreeManager && (
-            <div className="flex items-center gap-1 px-2 py-2 border-b border-zinc-800 bg-zinc-950 overflow-x-auto">
+            <div className="flex items-center gap-1 px-2 h-10 min-h-10 border-b border-zinc-800 bg-zinc-950 overflow-x-auto">
               {openTabs.map((tabId) => {
                 const tabItem = fileTreeManager.getFileById(tabId)
                 if (!tabItem) return null

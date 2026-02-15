@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { MoveLeft } from "lucide-react";
 
 interface ProblemDetailsProps {
   problem: Problem;
@@ -11,6 +13,7 @@ interface ProblemDetailsProps {
 }
 
 const ProblemDetailsPanel = ({ problem, testcases }: ProblemDetailsProps) => {
+  const router = useRouter();
 
   if (problem === undefined) {
     return <div>No problem data available.</div>;
@@ -107,6 +110,15 @@ const ProblemDetailsPanel = ({ problem, testcases }: ProblemDetailsProps) => {
         initial="hidden"
         animate="visible"
       >
+        <motion.div
+          onClick={()=>{
+            router.push("/problems")
+          }}
+        >
+          <MoveLeft
+            className="w-5 h-5"
+          />
+        </motion.div>
         {/* Header */}
         <motion.div className="space-y-3" variants={itemVariants}>
           <motion.h1
