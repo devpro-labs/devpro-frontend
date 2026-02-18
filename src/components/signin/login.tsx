@@ -14,6 +14,7 @@ import { useAuth, useSignIn, useUser } from "@clerk/nextjs"
 import Loader from "../ui/Loader"
 import SITE_MAP from "@/lib/const/site_map"
 import { checkUser } from "./api"
+import { toast } from "sonner"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
@@ -22,7 +23,7 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter();
   const { getToken } = useAuth()
-  const {user} = useUser()
+  const { user } = useUser()
   const { signOut } = useAuth();
 
 
@@ -35,19 +36,21 @@ export function LoginForm() {
   }
 
   const checkUserUtil = async () => {
-    const token = await getToken({template: "devpro"}) ?? "";
-      const apiResponse = await checkUser({
-        username: user?.username ?? "",
-        email: user?.primaryEmailAddress?.emailAddress ?? ""
-      }, token);
+    const token = await getToken({ template: "devpro" }) ?? "";
+    const apiResponse = await checkUser({
+      username: user?.username ?? "",
+      email: user?.primaryEmailAddress?.emailAddress ?? ""
+    }, token);
 
-      if(apiResponse.STATUS != 200){
-        console.log(401);
-        signOut();
-        return;
-      }
+    if (apiResponse.STATUS != 200) {
+      console.log(401);
+      toast.error("User verification failed", { duration: 3000 });
+      signOut();
+      return;
+    }
 
-      router.push(SITE_MAP.problems.Problems);
+    toast.success("Login successful!", { duration: 3000 });
+    router.push(SITE_MAP.problems.Problems);
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,11 +65,12 @@ export function LoginForm() {
       })
       await setActive({ session: res.createdSessionId })
       await checkUserUtil();
-      
 
-    } catch (error) {
+
+    } catch (error: any) {
       console.log(error)
-    }finally{
+      toast.error(error?.errors?.[0]?.message || "Login failed", { duration: 3000 });
+    } finally {
       setIsLoading(false)
     }
   }
@@ -83,9 +87,10 @@ export function LoginForm() {
       })
 
       await checkUserUtil();
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
-    }finally{
+      toast.error(error?.errors?.[0]?.message || "Google login failed", { duration: 3000 });
+    } finally {
       setIsLoading(false)
     }
   }
@@ -97,13 +102,14 @@ export function LoginForm() {
     try {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_github",
-       redirectUrl: SITE_MAP.auth.Login,
+        redirectUrl: SITE_MAP.auth.Login,
         redirectUrlComplete: SITE_MAP.auth.Login
       })
-       await checkUserUtil();
-    } catch (error) {
+      await checkUserUtil();
+    } catch (error: any) {
       console.log(error)
-    }finally{
+      toast.error(error?.errors?.[0]?.message || "GitHub login failed", { duration: 3000 });
+    } finally {
       setIsLoading(false)
     }
   }

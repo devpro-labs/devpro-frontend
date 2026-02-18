@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { motion } from "framer-motion"
 import { Github } from "lucide-react"
-import {  useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSignUp } from "@clerk/nextjs"
 import OtpVerification from "./otp"
 import Loader from "../ui/Loader"
 import SITE_MAP from "@/lib/const/site_map"
+import { toast } from "sonner"
 
 export function SignupForm() {
   const [email, setEmail] = useState("")
@@ -62,8 +63,10 @@ export function SignupForm() {
 
       setverificationStep(true)
       setisOpen(true);
-    } catch (error) {
+      toast.success("Verification code sent to your email", { duration: 3000 });
+    } catch (error: any) {
       console.log(error);
+      toast.error(error?.errors?.[0]?.message || "Signup failed", { duration: 3000 });
     } finally {
       setisLoading(false)
     }
@@ -84,10 +87,12 @@ export function SignupForm() {
         await setActive({
           session: createdSessionId
         })
+        toast.success("Account created successfully!", { duration: 3000 });
         router.push(SITE_MAP.problems.Problems);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
+      toast.error(error?.errors?.[0]?.message || "OTP verification failed", { duration: 3000 });
     } finally {
       setisLoading(false)
     }
@@ -104,8 +109,9 @@ export function SignupForm() {
         redirectUrl: SITE_MAP.problems.Problems,
         redirectUrlComplete: SITE_MAP.problems.Problems
       })
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
+      toast.error(error?.errors?.[0]?.message || "Google signup failed", { duration: 3000 });
     }
     finally {
       setisLoading(false)
@@ -122,8 +128,9 @@ export function SignupForm() {
         redirectUrl: SITE_MAP.problems.Problems,
         redirectUrlComplete: SITE_MAP.problems.Problems
       })
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
+      toast.error(error?.errors?.[0]?.message || "GitHub signup failed", { duration: 3000 });
     } finally {
       setisLoading(false)
     }
@@ -170,7 +177,7 @@ export function SignupForm() {
             </Button>
 
             <Button type="button" variant="outline" className="w-1/3 bg-transparent" onClick={handleGithubSignup}>
-              
+
               <Github className=" h-4 w-4" />
             </Button>
           </div>

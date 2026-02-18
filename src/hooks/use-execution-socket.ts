@@ -3,10 +3,18 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { WS_URL } from "@/lib/const/backend_route";
 import backendRoute from "@/lib/const/backend_route";
+import { toast } from "sonner";
 
 export interface ExecutionEvent {
-  type: "LOG" | "TESTCASE" | "INFO";
+  type: "LOG" | "TESTCASE" | "INFO" | "ERROR";
   data: any;
+}
+
+export interface ExecutionError {
+  DATA: null;
+  MESSAGE: string;
+  STATUS: number;
+  ERROR: string;
 }
 
 export interface LogEntry {
@@ -48,6 +56,7 @@ interface UseExecutionSocketReturn {
   testResult: TestResult | null;
   isConnected: boolean;
   isComplete: boolean;
+  error: ExecutionError | null;
   connect: (executionId: string) => void;
   disconnect: () => void;
   clearLogs: () => void;
@@ -58,12 +67,14 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [error, setError] = useState<ExecutionError | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   const clearLogs = useCallback(() => {
     setLogs([]);
     setTestResult(null);
     setIsComplete(false);
+    setError(null);
   }, []);
 
   const disconnect = useCallback(() => {
@@ -141,6 +152,17 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
               message: `[INFO] ${infoMessage}`,
             },
           ]);
+        } else if (executionEvent.type === "ERROR") {
+          console.log("❌ ERROR event received:", executionEvent.data);
+          const errorData = executionEvent.data as ExecutionError;
+          setError(errorData);
+          setIsComplete(true);
+
+          // Show toast notification for the error
+          toast.error(errorData.MESSAGE || errorData.ERROR || "An error occurred", {
+            description: errorData.ERROR !== errorData.MESSAGE ? errorData.ERROR : undefined,
+            duration: 3000,
+          });
         } else {
           console.log("⚠️ Unknown event type:", executionEvent.type);
         }
@@ -180,6 +202,7 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
     testResult,
     isConnected,
     isComplete,
+    error,
     connect,
     disconnect,
     clearLogs,

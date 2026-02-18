@@ -6,6 +6,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { ClerkProvider } from "@clerk/nextjs"
 import { QueryClientProviderWrapper } from "@/context/Query"
+import { Toaster } from "sonner"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -45,6 +46,7 @@ export default function RootLayout({
         <ClerkProvider>
           <QueryClientProviderWrapper>
             {children}
+            <Toaster theme="dark" position="top-right" richColors />
             {/* <Analytics /> */}
           </QueryClientProviderWrapper>
         </ClerkProvider>
