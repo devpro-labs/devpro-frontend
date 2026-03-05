@@ -13,7 +13,14 @@ export class FileTreeManager {
   }
 
   private updateIds() {
-    this.nextId = Math.max(...this.files.flatMap((f) => this.getAllItemIds(f)).map((id) => Number.parseInt(id)), 0) + 1
+    const allIds = this.files.flatMap((f) => this.getAllItemIds(f))
+    const numericIds = allIds
+      .map((id) => {
+        const match = id.match(/^item-(\d+)$/)
+        return match ? parseInt(match[1], 10) : -1
+      })
+      .filter((n) => n >= 0)
+    this.nextId = numericIds.length > 0 ? Math.max(...numericIds) + 1 : 0
   }
 
   private getAllItemIds(item: FileItem): string[] {
@@ -132,7 +139,59 @@ export class FileTreeManager {
     return this.files
   }
 
+  // Get only editable files (filter out readonly)
+  getEditableFiles(): FileItem[] {
+    return this.filterReadOnlyFiles(this.files)
+  }
+
+  private filterReadOnlyFiles(files: FileItem[]): FileItem[] {
+    return files
+      .filter(file => !file.isReadOnly)
+      .map(file => ({
+        ...file,
+        children: file.children ? this.filterReadOnlyFiles(file.children) : undefined
+      }))
+  }
+
+  // Add a readonly file with sequential ID
+  addReadOnlyFile(name: string, content: string, parentId?: string): FileItem {
+    const newFile: FileItem = {
+      id: this.generateId(),
+      name,
+      content,
+      isFolder: false,
+      isReadOnly: true,
+      parentId,
+    }
+
+    if (parentId) {
+      const parent = this.findItemById(parentId)
+      if (parent && parent.isFolder) {
+        if (!parent.children) parent.children = []
+        parent.children.push(newFile)
+      }
+    } else {
+      this.files.push(newFile)
+    }
+
+    return newFile
+  }
+
+  // Clear and add new readonly files (keeps editable files)
+  setReadOnlyFiles(readOnlyData: { name: string; content: string }[]): void {
+    // Remove existing readonly files
+    this.files = this.filterReadOnlyFiles(this.files)
+    // Recalculate nextId based on remaining files to avoid duplicate IDs
+    this.updateIds()
+    // Add new readonly files with sequential IDs
+    readOnlyData.forEach(({ name, content }) => {
+      this.addReadOnlyFile(name, content)
+    })
+  }
+
   updateFileContent(id: string, content: string): boolean {
+    console.log("Updating content for file ID:", id)
+    console.log("content:", content)
     const item = this.findItemById(id)
     if (!item || item.isFolder) return false
     item.content = content

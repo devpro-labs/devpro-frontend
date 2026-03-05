@@ -11,6 +11,7 @@ import {
   Edit2,
   Check,
   X,
+  Lock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +24,7 @@ export interface FileItem {
   content: string
   isFolder: boolean
   isMainFile?: boolean
+  isReadOnly?: boolean
   children?: FileItem[]
   parentId?: string
 }
@@ -120,12 +122,15 @@ export function FileExplorer({
           )}
 
           {/* Icon */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex items-center gap-1">
             {item.isFolder ? (
               <Folder className="w-4 h-4 text-yellow-500" />
+            ) : item.isReadOnly ? (
+              <FileText className="w-4 h-4 text-gray-500" />
             ) : (
               <FileText className="w-4 h-4 text-blue-400" />
             )}
+            {item.isReadOnly && <Lock className="w-3 h-3 text-gray-500" />}
           </div>
 
           {/* Rename Input or Name */}
@@ -197,7 +202,7 @@ export function FileExplorer({
                   </button>
                 </>
               )}
-              {!item.isMainFile && (
+              {!item.isMainFile && !item.isReadOnly && (
                 <>
                   <button
                     onClick={(e) => {

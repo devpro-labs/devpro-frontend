@@ -4,6 +4,16 @@ import { Response } from "@/lib/const/response";
 import { Submission, SubmissionApiResponse } from "@/lib/types";
 import { FileItem } from "./right-panal/file-explorer";
 
+// Helper function to filter out readonly files (they are for frontend display only)
+const filterReadOnlyFiles = (files: FileItem[]): FileItem[] => {
+  return files
+    .filter(file => !file.isReadOnly)
+    .map(file => ({
+      ...file,
+      children: file.children ? filterReadOnlyFiles(file.children) : undefined
+    }));
+};
+
 const fetchProblems = async (
   token?: string
 ): Promise<Response> => {
@@ -31,14 +41,16 @@ const runCode = async (
   libOrFramework: string,
   files: FileItem[],
 ): Promise<Response> => {
-  console.log("Running code with file tree:", files);
+  // Filter out readonly files - they are for frontend display only
+  const editableFiles = filterReadOnlyFiles(files);
+  console.log("Running code with file tree (readonly filtered):", editableFiles);
   const api = await API(token);
   const response = await api.post(backendRoute.code.runCode(problemId), {
     code,
     image_name,
     file_name,
     libOrFramework,
-    files: files,
+    files: editableFiles,
   })
 
   return response.data;
@@ -53,14 +65,16 @@ const submitCode = async (
   libOrFramework: string,
   files: FileItem[],
 ): Promise<Response> => {
-  console.log("Running code with file tree:", files);
+  // Filter out readonly files - they are for frontend display only
+  const editableFiles = filterReadOnlyFiles(files);
+  console.log("Submitting code with file tree (readonly filtered):", editableFiles);
   const api = await API(token);
   const response = await api.post(backendRoute.code.submitCode(problemId), {
     code,
     image_name,
     file_name,
     libOrFramework,
-    files: files,
+    files: editableFiles,
   })
 
   return response.data;
