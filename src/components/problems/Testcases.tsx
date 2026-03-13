@@ -14,7 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type Dispatch, type SetStateAction } from "react";
 import Terminal, { LogEntry } from "./terminal";
 
 interface TestCasesPanelProps {
@@ -26,7 +26,7 @@ interface TestCasesPanelProps {
   isConnected?: boolean;
   testResult?: TestResult | null;
   onClose?: () => void;
-  setIsPanelMinimized: (minimized: boolean) => void;
+  setIsPanelMinimized: Dispatch<SetStateAction<boolean>>;
   isPanelMinimized: boolean;
 }
 
@@ -94,17 +94,17 @@ const TestCasesPanel = ({
               </TabsTrigger>
 
               <TabsTrigger value="terminal" className="text-xs h-7 px-3 gap-1.5">
-              <TerminalIcon className="w-3 h-3" />
-              Terminal
-              {logs.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="h-4 px-1 text-xs bg-zinc-700 text-zinc-300"
-                >
-                  {logs.length}
-                </Badge>
-              )}
-            </TabsTrigger>
+                <TerminalIcon className="w-3 h-3" />
+                Terminal
+                {logs.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-4 px-1 text-xs bg-zinc-700 text-zinc-300"
+                  >
+                    {logs.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
             </TabsList>
 
             <div className="flex items-center gap-1">
@@ -225,16 +225,16 @@ const TestCasesPanel = ({
 
                 {/* TERMINAL TAB — forceMount keeps logs alive across tab switches */}
                 <TabsContent
-                value="terminal"
-                forceMount
-                className={`mt-0 p-4 ${activeTab !== "terminal" ? "hidden" : ""}`}
-              >
+                  value="terminal"
+                  forceMount
+                  className={`mt-0 p-4 ${activeTab !== "terminal" ? "hidden" : ""}`}
+                >
                   <Terminal
                     logs={logs}
                     isConnected={isConnected}
                     isConnecting={isConnecting}
                   />
-              </TabsContent>
+                </TabsContent>
 
 
               </motion.div>

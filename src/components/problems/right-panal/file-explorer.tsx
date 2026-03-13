@@ -53,7 +53,7 @@ export function FileExplorer({
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState("")
-  const [creatingIn, setCreatingIn] = useState<string | null>(null)
+  const [creatingIn, setCreatingIn] = useState<string | undefined>(undefined)
   const [createMode, setCreateMode] = useState<"file" | "folder" | null>(null)
   const [newItemName, setNewItemName] = useState("")
 
@@ -89,7 +89,7 @@ export function FileExplorer({
       }
       setNewItemName("")
       setCreateMode(null)
-      setCreatingIn(null)
+      setCreatingIn(undefined)
     }
   }
 
@@ -255,7 +255,7 @@ export function FileExplorer({
                 if (e.key === "Enter") handleCreateItem()
                 if (e.key === "Escape") {
                   setCreateMode(null)
-                  setCreatingIn(null)
+                  setCreatingIn(undefined)
                   setNewItemName("")
                 }
               }}
@@ -268,7 +268,7 @@ export function FileExplorer({
             <button
               onClick={() => {
                 setCreateMode(null)
-                setCreatingIn(null)
+                setCreatingIn(undefined)
                 setNewItemName("")
               }}
               className="p-1 hover:bg-red-600/40 rounded transition-colors"
@@ -297,7 +297,7 @@ export function FileExplorer({
             size="sm"
             className="h-6 w-6 p-0 hover:bg-zinc-800 transition-colors"
             onClick={() => {
-              setCreatingIn(null)
+              setCreatingIn(undefined)
               setCreateMode("file")
             }}
             title="New file"
@@ -309,7 +309,7 @@ export function FileExplorer({
             size="sm"
             className="h-6 w-6 p-0 hover:bg-zinc-800 transition-colors"
             onClick={() => {
-              setCreatingIn(null)
+              setCreatingIn(undefined)
               setCreateMode("folder")
             }}
             title="New folder"

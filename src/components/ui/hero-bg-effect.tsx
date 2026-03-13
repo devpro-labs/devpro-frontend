@@ -1,8 +1,8 @@
 "use client"
 import { cn } from "@/lib/utils"
-import { motion } from "motion/react"
+import { motion, type Transition } from "motion/react"
 
-const transition = {
+const transition: Transition = {
   duration: 2,
   ease: "easeInOut",
 }
@@ -20,8 +20,8 @@ export const GoogleGeminiEffect = ({
 }) => {
   return (
     <div className={cn(" ", className)}>
-     
-      
+
+
       <svg
         width="1440"
         height="890"
