@@ -76,8 +76,7 @@ const CodeEditor = ({
     mutationFn: async () => {
       setIsRunning(true)
       const token = await getToken({ template: "devpro" })
-      // Use getEditableFiles() to exclude readonly files from being sent
-      return await runCode(token ?? "", problemId, code, image, file, libOrFramework, fileTreeManager!.getEditableFiles())
+      return await runCode(token ?? "", problemId, code, image, file, libOrFramework, fileTreeManager!.getFiles())
     },
     onSuccess(data) {
       setRunCodeResponse(data)
@@ -100,8 +99,7 @@ const CodeEditor = ({
     mutationFn: async () => {
       setIsRunning(true)
       const token = await getToken({ template: "devpro" })
-      // Use getEditableFiles() to exclude readonly files from being sent
-      return await submitCode(token ?? "", problemId, code, image, file, libOrFramework, fileTreeManager!.getEditableFiles())
+      return await submitCode(token ?? "", problemId, code, image, file, libOrFramework, fileTreeManager!.getFiles())
     },
     onSuccess(data) {
       setRunCodeResponse(data)
@@ -133,6 +131,39 @@ const CodeEditor = ({
     )
   }, [services, keys])
 
+  const getRuntimeEntryFileName = useCallback((language: string, framework: string) => {
+    const baseFileName = getFileName(language)
+    const image = getImageName(language)
+    if (image === "express-js" || image === "express-ts") {
+      return `src/${baseFileName}`
+    }
+    return baseFileName
+  }, [])
+
+  const createInitialFileTree = useCallback((language: string, snippet: string, framework: string) => {
+    const manager = new FileTreeManager()
+    const mainFileName = getFileName(language)
+
+    const shouldUseSrcFolder = framework === "express-js" || framework === "express-ts"
+
+    let mainFile: FileItem
+    if (shouldUseSrcFolder) {
+      const srcFolder = manager.addFolder("src")
+      srcFolder.isMainFile = true
+      mainFile = manager.addFile(mainFileName, srcFolder.id)
+    } else {
+      mainFile = manager.addFile(mainFileName)
+    }
+
+    mainFile.isMainFile = true
+    mainFile.content = snippet
+
+    const readOnlyData = getReadOnlyFileData(framework)
+    manager.setReadOnlyFiles(readOnlyData)
+
+    return { manager, mainFile }
+  }, [getReadOnlyFileData])
+
   useEffect(() => {
     const defaultLib = EDITOR_LIBS.find((l) => l.language === "javascript" && l.value.includes("express"))
 
@@ -142,29 +173,24 @@ const CodeEditor = ({
     setSelectedLan(defaultLib.language)
     setCode(defaultLib.snippet)
 
-    const defaultFileName = getFileName(defaultLib.language)
+    const defaultFileName = getRuntimeEntryFileName(defaultLib.language, defaultLib.value)
     setFile(defaultFileName)
 
     setLibOrFramework(getLibOrFramework(defaultLib.language))
     setImage(getImageName(defaultLib.language))
 
-    const manager = new FileTreeManager()
-    const mainFile = manager.addFile(defaultFileName)
-    mainFile.isMainFile = true
-    mainFile.content = defaultLib.snippet
-
-    // Add readonly config files based on framework (with sequential IDs)
-    console.log("Initial framework:", defaultLib.value)
-    const readOnlyData = getReadOnlyFileData(defaultLib.value)
-    console.log("Generated readonly files:", readOnlyData)
-    manager.setReadOnlyFiles(readOnlyData)
+    const { manager, mainFile } = createInitialFileTree(
+      defaultLib.language,
+      defaultLib.snippet,
+      defaultLib.value
+    )
 
     setFileTree(manager.getFiles())
     setFileTreeManager(manager)
     setSelectedFileId(mainFile.id)
     selectedFileIdRef.current = mainFile.id
     setOpenTabs([mainFile.id])
-  }, [])
+  }, [createInitialFileTree, getRuntimeEntryFileName])
 
   // Regenerate readonly files when services/keys change (after problem data loads)
   useEffect(() => {
@@ -193,21 +219,17 @@ const CodeEditor = ({
     isSettingCodeRef.current = true
     setCode(selectedLib.snippet)
 
-    const newFileName = getFileName(selectedLib.language)
+    const newFileName = getRuntimeEntryFileName(selectedLib.language, selectedLib.value)
     setFile(newFileName)
 
     setLibOrFramework(getLibOrFramework(selectedLib.language))
     setImage(getImageName(selectedLib.language))
 
-    const manager = new FileTreeManager()
-    const mainFile = manager.addFile(newFileName)
-    mainFile.isMainFile = true
-    mainFile.content = selectedLib.snippet
-
-    // Add readonly config files based on framework (with sequential IDs)
-    console.log("Library changed, generating readonly files for:", selectedLib)
-    const readOnlyData = getReadOnlyFileData(selectedLib.value)
-    manager.setReadOnlyFiles(readOnlyData)
+    const { manager, mainFile } = createInitialFileTree(
+      selectedLib.language,
+      selectedLib.snippet,
+      selectedLib.value
+    )
 
     setFileTree(manager.getFiles())
     setFileTreeManager(manager)
@@ -245,7 +267,7 @@ const CodeEditor = ({
   const handleDeleteFile = (id: string) => {
     if (!fileTreeManager) return
     const item = fileTreeManager.getFileById(id)
-    if (item?.isMainFile) return
+    if (item?.isMainFile || item?.isReadOnly) return
     fileTreeManager.deleteItem(id)
     if (selectedFileIdRef.current === id) {
       setSelectedFileId(null)
@@ -257,6 +279,8 @@ const CodeEditor = ({
 
   const handleRenameFile = (id: string, newName: string) => {
     if (!fileTreeManager) return
+    const item = fileTreeManager.getFileById(id)
+    if (item?.isMainFile || item?.isReadOnly) return
     fileTreeManager.renameItem(id, newName)
     setFileTree(fileTreeManager.getFiles())
   }
@@ -349,14 +373,22 @@ const CodeEditor = ({
     if (!fileTreeManager || !problemId || !libOrFramework) return
 
     // Find the last selected editable file ID (not readonly)
-    const allFiles = fileTreeManager.getFiles()
-    const editableSelectedId = !isCurrentFileReadOnly ? selectedFileId :
-      openTabs.find(tabId => !allFiles.find(f => f.id === tabId && f.isReadOnly)) || null
+    const editableSelectedId = !isCurrentFileReadOnly
+      ? selectedFileId
+      : openTabs.find((tabId) => {
+        const item = fileTreeManager.getFileById(tabId)
+        return item ? !item.isReadOnly : false
+      }) || null
+
+    const editableOpenTabs = openTabs.filter((tabId) => {
+      const item = fileTreeManager.getFileById(tabId)
+      return item ? !item.isReadOnly : false
+    })
 
     saveDraft(problemId, libOrFramework, {
       fileTree: fileTreeManager.getEditableFiles(), // Only save editable files
       selectedFileId: editableSelectedId,
-      openTabs: openTabs.filter(tabId => !allFiles.find(f => f.id === tabId && f.isReadOnly)),
+      openTabs: editableOpenTabs,
       code: "", // Don't save code separately - it's in fileTree
     })
   }, [fileTreeManager, problemId, libOrFramework, selectedFileId, openTabs, isCurrentFileReadOnly, saveDraft])
@@ -388,19 +420,34 @@ const CodeEditor = ({
 
     const draft = getDraft(problemId, libOrFramework)
     if (draft && draft.fileTree.length > 0) {
-      // Restore from saved draft
-      const manager = new FileTreeManager()
-      draft.fileTree.forEach(item => {
-        if (item.isFolder) {
-          const folder = manager.addFolder(item.name)
-          folder.id = item.id
-        } else {
-          const file = manager.addFile(item.name)
+      const restoreTreeRecursively = (
+        manager: FileTreeManager,
+        items: FileItem[],
+        parentId?: string
+      ) => {
+        items.forEach((item) => {
+          if (item.isFolder) {
+            const folder = manager.addFolder(item.name, parentId)
+            folder.id = item.id
+            folder.isMainFile = item.isMainFile
+            folder.isReadOnly = item.isReadOnly
+            if (item.children && item.children.length > 0) {
+              restoreTreeRecursively(manager, item.children, folder.id)
+            }
+            return
+          }
+
+          const file = manager.addFile(item.name, parentId)
           file.id = item.id
           file.content = item.content
           file.isMainFile = item.isMainFile
-        }
-      })
+          file.isReadOnly = item.isReadOnly
+        })
+      }
+
+      // Restore from saved draft
+      const manager = new FileTreeManager()
+      restoreTreeRecursively(manager, draft.fileTree)
 
       // Add readonly files when restoring draft
       const currentLib = EDITOR_LIBS.find((l) => getLibOrFramework(l.language) === libOrFramework)
@@ -412,12 +459,17 @@ const CodeEditor = ({
 
       setFileTreeManager(manager)
       setFileTree(manager.getFiles())
-      setSelectedFileId(draft.selectedFileId)
-      selectedFileIdRef.current = draft.selectedFileId
-      setOpenTabs(draft.openTabs)
+      const validOpenTabs = draft.openTabs.filter((tabId) => !!manager.getFileById(tabId))
+      const validSelectedFileId = draft.selectedFileId && manager.getFileById(draft.selectedFileId)
+        ? draft.selectedFileId
+        : validOpenTabs[0] ?? null
+
+      setSelectedFileId(validSelectedFileId)
+      selectedFileIdRef.current = validSelectedFileId
+      setOpenTabs(validOpenTabs)
       // Load code from the selected file content, not from draft.code
-      if (draft.selectedFileId) {
-        const selectedFile = manager.getFileById(draft.selectedFileId)
+      if (validSelectedFileId) {
+        const selectedFile = manager.getFileById(validSelectedFileId)
         console.log("Selected file from draft:", selectedFile)
         if (selectedFile) {
           isSettingCodeRef.current = true

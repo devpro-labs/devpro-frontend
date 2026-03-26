@@ -6,7 +6,7 @@ import backendRoute from "@/lib/const/backend_route";
 import { toast } from "sonner";
 
 export interface ExecutionEvent {
-  type: "LOG" | "TESTCASE" | "INFO" | "ERROR";
+  type: "LOG" | "TESTCASE" | "INFO" | "ERROR" | "URL";
   data: any;
 }
 
@@ -54,6 +54,8 @@ interface TestCaseResponse {
 interface UseExecutionSocketReturn {
   logs: LogEntry[];
   testResult: TestResult | null;
+  testUrl: string | null;
+  isTestUrlLoading: boolean;
   isConnected: boolean;
   isComplete: boolean;
   error: ExecutionError | null;
@@ -65,6 +67,8 @@ interface UseExecutionSocketReturn {
 export function useExecutionSocket(): UseExecutionSocketReturn {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [testUrl, setTestUrl] = useState<string | null>(null);
+  const [isTestUrlLoading, setIsTestUrlLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState<ExecutionError | null>(null);
@@ -73,6 +77,8 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
   const clearLogs = useCallback(() => {
     setLogs([]);
     setTestResult(null);
+    setTestUrl(null);
+    setIsTestUrlLoading(false);
     setIsComplete(false);
     setError(null);
   }, []);
@@ -91,6 +97,7 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
 
     // Clear previous logs and results
     clearLogs();
+    setIsTestUrlLoading(true);
 
     const wsUrl = `${WS_URL}${backendRoute.ws.execution(executionId)}`;
     console.log("🔌 Connecting to WebSocket:", wsUrl);
@@ -138,7 +145,23 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
 
           console.log("🧪 Extracted test result:", testResultData);
           setTestResult(testResultData as TestResult);
+          setIsTestUrlLoading(false);
           setIsComplete(true);
+        } else if (executionEvent.type === "URL") {
+          console.log("🔗 URL event received:", executionEvent.data);
+          const urlData = executionEvent.data;
+          const liveUrl = typeof urlData === "string"
+            ? urlData
+            : typeof urlData?.url === "string"
+              ? urlData.url
+              : typeof urlData?.liveUrl === "string"
+                ? urlData.liveUrl
+                : null;
+
+          if (liveUrl) {
+            setTestUrl(liveUrl);
+            setIsTestUrlLoading(false);
+          }
         } else if (executionEvent.type === "INFO") {
           console.log("ℹ️ INFO event received:", executionEvent.data);
           const infoMessage = typeof executionEvent.data === "string"
@@ -156,6 +179,7 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
           console.log("❌ ERROR event received:", executionEvent.data);
           const errorData = executionEvent.data as ExecutionError;
           setError(errorData);
+          setIsTestUrlLoading(false);
           setIsComplete(true);
 
           // Show toast notification for the error
@@ -200,6 +224,8 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
   return {
     logs,
     testResult,
+    testUrl,
+    isTestUrlLoading,
     isConnected,
     isComplete,
     error,

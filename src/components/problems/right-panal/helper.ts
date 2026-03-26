@@ -29,11 +29,11 @@ const getFileExtension = (language: string): string => {
 const getImageName = (language: string): string => {
   switch (language.toLowerCase()) {
     case 'python':
-      return 'runner-python-fastapi';
+      return 'fastapi-py';
     case 'javascript':
-      return 'express-js-core';
+      return 'express-js';
     case 'typescript':
-      return 'runner-typescript-express';
+      return 'express-ts';
     default:
       throw new Error(`Unsupported language: ${language}`);
   }

@@ -29,6 +29,8 @@ const page = () => {
   const {
     logs,
     testResult,
+    testUrl,
+    isTestUrlLoading,
     isConnected,
     isComplete,
     connect: connectWebSocket,
@@ -139,6 +141,8 @@ const page = () => {
                 runCodeResponse={runCodeResponse}
                 sampleTestCases={res?.DATA?.testCases ?? []}
                 logs={logs}
+                testUrl={testUrl}
+                isTestUrlLoading={isTestUrlLoading}
                 isConnected={isConnected}
                 testResult={testResult}
                 onClose={() => setTerminalOpen(false)}

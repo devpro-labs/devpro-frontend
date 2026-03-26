@@ -23,6 +23,8 @@ interface TestCasesPanelProps {
   isRunning?: boolean;
   isConnecting?: boolean;
   logs?: LogEntry[];
+  testUrl?: string | null;
+  isTestUrlLoading?: boolean;
   isConnected?: boolean;
   testResult?: TestResult | null;
   onClose?: () => void;
@@ -49,6 +51,8 @@ const TestCasesPanel = ({
   isRunning,
   isConnecting = false,
   logs = [],
+  testUrl = null,
+  isTestUrlLoading = false,
   isConnected = false,
   testResult: wsTestResult,
   onClose,
@@ -233,6 +237,8 @@ const TestCasesPanel = ({
                     logs={logs}
                     isConnected={isConnected}
                     isConnecting={isConnecting}
+                    testUrl={testUrl}
+                    isTestUrlLoading={isTestUrlLoading}
                   />
                 </TabsContent>
 

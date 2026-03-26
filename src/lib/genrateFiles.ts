@@ -132,9 +132,13 @@ export const getEnvFile = ({
 }: {
   keys: Record<string, string | number>;
 }) => {
-  return Object.entries(keys)
+  const warningNote = "# ⚠️ When u run or submit code env is auto-inject so use env variables of .env.example";
+
+  const envLines = Object.entries(keys)
     .map(([name, value]) => `${name}=${value}`)
     .join("\n");
+
+  return `${warningNote}\n${envLines}`;
 }
 
 // ReadOnly file data (without ID - ID is assigned by FileTreeManager)
@@ -182,7 +186,7 @@ const getExpressJsReadOnlyFiles = (services: string[], keys: Record<string, stri
       content: JSON.stringify(packageJson, null, 2),
     },
     {
-      name: ".env",
+      name: ".env.example",
       content: envContent,
     },
   ];
@@ -203,7 +207,7 @@ const getExpressTsReadOnlyFiles = (services: string[], keys: Record<string, stri
       content: JSON.stringify(tsConfig, null, 2),
     },
     {
-      name: ".env",
+      name: ".env.example",
       content: envContent,
     },
   ];
@@ -219,7 +223,7 @@ const getFastApiReadOnlyFiles = (services: string[], keys: Record<string, string
       content: requirements.join("\n"),
     },
     {
-      name: ".env",
+      name: ".env.example",
       content: envContent,
     },
   ];

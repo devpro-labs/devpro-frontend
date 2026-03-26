@@ -14,6 +14,8 @@ interface TerminalProps {
   logs: LogEntry[];
   isConnected?: boolean;
   isConnecting?: boolean;
+  testUrl?: string | null;
+  isTestUrlLoading?: boolean;
   className?: string;
 }
 
@@ -21,6 +23,8 @@ const Terminal = ({
   logs,
   isConnected = false,
   isConnecting = false,
+  testUrl = null,
+  isTestUrlLoading = false,
   className = "",
 }: TerminalProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -45,16 +49,32 @@ const Terminal = ({
       className={`flex flex-col bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden ${className}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-zinc-800 shrink-0">
+      <div className="px-4 py-2 bg-zinc-900 border-b border-zinc-800 shrink-0 space-y-1.5">
         <div className="flex items-center gap-1.5">
           <Circle
-            className={`w-2 h-2 fill-current ${
-              isConnected ? "text-emerald-400" : "text-zinc-600"
-            }`}
+            className={`w-2 h-2 fill-current ${isConnected ? "text-emerald-400" : "text-zinc-600"
+              }`}
           />
           <span className="text-xs text-zinc-500">
             {isConnected ? "Connected" : "Disconnected"}
           </span>
+        </div>
+        <div className="text-xs text-zinc-400 break-all">
+          <span className="text-zinc-500">Test url: </span>
+          {isTestUrlLoading ? (
+            <span className="text-yellow-400 animate-pulse">Loading...</span>
+          ) : testUrl ? (
+            <a
+              href={testUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 underline"
+            >
+              {testUrl}
+            </a>
+          ) : (
+            <span className="text-zinc-600">-</span>
+          )}
         </div>
       </div>
 

@@ -37,6 +37,10 @@ export class FileTreeManager {
     return `item-${this.nextId++}`
   }
 
+  private canModifyItem(item: FileItem): boolean {
+    return !item.isMainFile && !item.isReadOnly
+  }
+
   private findItemById(id: string, items: FileItem[] = this.files): FileItem | null {
     for (const item of items) {
       if (item.id === id) return item
@@ -113,6 +117,9 @@ export class FileTreeManager {
   }
 
   deleteItem(id: string): boolean {
+    const item = this.findItemById(id)
+    if (!item || !this.canModifyItem(item)) return false
+
     const result = this.findParentAndIndex(id)
     if (!result) return false
 
@@ -126,7 +133,7 @@ export class FileTreeManager {
 
   renameItem(id: string, newName: string): boolean {
     const item = this.findItemById(id)
-    if (!item) return false
+    if (!item || !this.canModifyItem(item)) return false
     item.name = newName
     return true
   }
