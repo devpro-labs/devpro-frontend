@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 import {
   Select,
@@ -14,57 +13,80 @@ import {
 } from '../ui/select'
 
 import { CheckEffected } from './checke-effected'
-import { Difficulty } from '@/lib/types'
 
 export interface Problem {
   id: string
   title: string
-  slug: string
-  difficulty: Difficulty
-  category: string
+  difficulty: string
   tags: string[]
   description: string
+  services?: string[]
   isPremium?: boolean
 }
 
+export interface ProblemListItem {
+  problem: Problem
+  isSolved: boolean
+}
 
-const difficultyColors: Record<Difficulty, string> = {
-  Beginner: 'text-green-400',
-  Intermediate: 'text-yellow-400',
-  Advanced: 'text-orange-400',
-  Expert: 'text-red-500',
+const getDifficultyColor = (difficulty: string) => {
+  switch (difficulty.toLowerCase()) {
+    case 'casual':
+    case 'beginner':
+      return 'text-green-400'
+    case 'intermediate':
+      return 'text-yellow-400'
+    case 'advanced':
+      return 'text-orange-400'
+    case 'expert':
+      return 'text-red-500'
+    default:
+      return 'text-zinc-300'
+  }
 }
 
 
-export default function Problems({ data }: { data: Problem[] }) {
-  // console.log("Problems data in Problems component:", data);
-  const router = useRouter()
+export default function Problems({ data }: { data: ProblemListItem[] }) {
+  const normalizedProblems = useMemo(() => {
+    return data.map(item => ({
+      ...item.problem,
+      isSolved: item.isSolved,
+    }))
+  }, [data])
 
   const [search, setSearch] = useState('')
-  const [category, setCategory] = useState('all')
-  const [difficulty, setDifficulty] = useState<'all' | Difficulty>('all')
+  const [service, setService] = useState('all')
+  const [difficulty, setDifficulty] = useState('all')
   const [tag, setTag] = useState('all')
 
-  // TODO: replace with real solved ids from backend
-  const solvedIds: string[] = []
 
+  const services = useMemo(() => {
+    return [
+      'all',
+      ...Array.from(
+        new Set(
+          normalizedProblems.flatMap(problem => problem.services ?? [])
+        )
+      ),
+    ]
+  }, [normalizedProblems])
 
-  const categories = useMemo(() => {
-    return ['all', ...Array.from(new Set(data.map(p => p.category)))]
-  }, [data])
+  const difficulties = useMemo(() => {
+    return ['all', ...Array.from(new Set(normalizedProblems.map(p => p.difficulty)))]
+  }, [normalizedProblems])
 
   const tags = useMemo(() => {
-    return ['all', ...Array.from(new Set(data.flatMap(p => p.tags)))]
-  }, [data])
+    return ['all', ...Array.from(new Set(normalizedProblems.flatMap(p => p.tags)))]
+  }, [normalizedProblems])
 
   const filteredProblems = useMemo(() => {
-    return data.filter(p => {
+    return normalizedProblems.filter(p => {
       const matchSearch = p.title
         .toLowerCase()
         .includes(search.toLowerCase())
 
-      const matchCategory =
-        category === 'all' || p.category === category
+      const matchService =
+        service === 'all' || (p.services ?? []).includes(service)
 
       const matchDifficulty =
         difficulty === 'all' || p.difficulty === difficulty
@@ -72,9 +94,9 @@ export default function Problems({ data }: { data: Problem[] }) {
       const matchTag =
         tag === 'all' || p.tags.includes(tag)
 
-      return matchSearch && matchCategory && matchDifficulty && matchTag
+      return matchSearch && matchService && matchDifficulty && matchTag
     })
-  }, [data, search, category, difficulty, tag])
+  }, [normalizedProblems, search, service, difficulty, tag])
 
 
   return (
@@ -93,15 +115,15 @@ export default function Problems({ data }: { data: Problem[] }) {
           onChange={e => setSearch(e.target.value)}
         />
 
-        {/* Category */}
-        <Select value={category} onValueChange={setCategory}>
+        {/* Service */}
+        <Select value={service} onValueChange={setService}>
           <SelectTrigger>
-            <SelectValue placeholder="Category" />
+            <SelectValue placeholder="Service" />
           </SelectTrigger>
           <SelectContent>
-            {categories.map((c,idx) => (
-              <SelectItem key={idx} value={c}>
-                {c}
+            {services.map((serviceName, idx) => (
+              <SelectItem key={idx} value={serviceName}>
+                {serviceName}
               </SelectItem>
             ))}
           </SelectContent>
@@ -110,17 +132,17 @@ export default function Problems({ data }: { data: Problem[] }) {
         {/* Difficulty */}
         <Select
           value={difficulty}
-          onValueChange={v => setDifficulty(v as 'all' | Difficulty)}
+          onValueChange={setDifficulty}
         >
           <SelectTrigger>
             <SelectValue placeholder="Difficulty" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Difficulty</SelectItem>
-            <SelectItem value="Beginner">Beginner</SelectItem>
-            <SelectItem value="Intermediate">Intermediate</SelectItem>
-            <SelectItem value="Advanced">Advanced</SelectItem>
-            <SelectItem value="Expert">Expert</SelectItem>
+            {difficulties.map((difficultyValue, idx) => (
+              <SelectItem key={idx} value={difficultyValue}>
+                {difficultyValue}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -147,8 +169,6 @@ export default function Problems({ data }: { data: Problem[] }) {
         )}
 
         {filteredProblems.map((p, index) => {
-          const isSolved = solvedIds.includes(p.id)
-
           return (
             <Link
               key={p.id}
@@ -169,7 +189,7 @@ export default function Problems({ data }: { data: Problem[] }) {
                   </span>
 
                   <CheckEffected
-                    isSolved={isSolved}
+                    isSolved={p.isSolved}
                     id={`problem-${p.id}`}
                   />
 
@@ -181,7 +201,7 @@ export default function Problems({ data }: { data: Problem[] }) {
                 {/* RIGHT */}
                 <div className="flex items-center gap-3 shrink-0">
                   <span
-                    className={`text-sm font-medium ${difficultyColors[p.difficulty]}`}
+                    className={`text-sm font-medium ${getDifficultyColor(p.difficulty)}`}
                   >
                     {p.difficulty}
                   </span>
