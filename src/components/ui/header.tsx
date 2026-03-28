@@ -19,8 +19,7 @@ export function Header() {
 
   const navLinks: Array<NavLink> = [
     { name: "Features", href: "#features" },
-    { name: "Frameworks", href: "#frameworks" },
-    { name: "Pricing", href: "#pricing" },
+    { name: "Frameworks", href: "#frameworks" }
   ];
 
   const authLinks: Array<NavLink> = [
