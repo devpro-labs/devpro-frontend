@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import { Code2 } from "lucide-react"
+import { Code2, User2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { SignInButton, useAuth, useUser } from "@clerk/nextjs"
 import { Atom } from "react-loading-indicators"
@@ -26,7 +26,6 @@ export function Header() {
   const authLinks: Array<NavLink> = [
     ...navLinks,
     { name: "Problems", href: "/problems" },
-    { name: "Profile", href: `/profile/${user?.username || 'me'}` },
   ];
 
   const { signOut } = useAuth();
@@ -80,7 +79,10 @@ export function Header() {
         <div className="flex items-center gap-3">
           {isSignedIn && (
             <div className="text-sm text-muted-foreground flex items-center gap-4">
-              <div>Hello, {user?.firstName || "User"}</div>
+              <Link href={`/profile/${user?.username || 'me'}`} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                <User2 className="inline-block h-4 w-4 mr-1" />
+                {user?.username || "User"}
+              </Link>
               <div>
                 <Button variant="link" className="p-0" onClick={() => signOut()}>
                   Sign Out

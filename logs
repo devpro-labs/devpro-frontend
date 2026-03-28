@@ -1,0 +1,15 @@
+Profile Update Request Received ProfileUpdateRequest(submission=Submission(id=1a8878d4-41e9-442b-b7a2-d5de4dbf61f9, problemId=d1a6cc36-f892-4a1e-9099-e9b8bcf2933d, userId=user_3BWKegI3nUmLHOjE4ZFqhEI1K9G, framework=ts-express, testcasesPassed=4, totalTestcases=4, status=ACCEPTED, executionTimeMs=null, memoryUsedMB=null, submittedAt=2026-03-28T08:02:41.541322100Z), problem=Problem(id=d1a6cc36-f892-4a1e-9099-e9b8bcf2933d, title=Palindrome Checker API, difficulty=CASUAL, tags=[logic, strings, express], services=[REST], entryFile=index, composeFile=null, keys={"PORT":"***"}, timeLimitSeconds=5, memoryLimitMB=128, cpuLimit=0.2, isActive=true), isAlreadyDone=true)
+Hibernate: select p1_0.user_id,p1_0.casual_solved,p1_0.current_streak,p1_0.engineering_solved,p1_0.last_submission_at,p1_0.max_streak,p1_0.most_used_framework,p1_0.pro_solved,p1_0.promax_solved,p1_0.profile_views,p1_0.total_solved,p1_0.total_submissions,p1_0.updated_at from profile p1_0 where p1_0.user_id=?
+Hibernate: select ya1_0.user_id,ya1_0.activity_date,ya1_0.submission_count from profile_activity_heatmap ya1_0 where ya1_0.user_id=?
+Hibernate: select ts1_0.user_id,ts1_0.tag,ts1_0.count from profile_tag_stats ts1_0 where ts1_0.user_id=?
+Hibernate: select fs1_0.user_id,fs1_0.framework,fs1_0.count from profile_framework_stats fs1_0 where fs1_0.user_id=?
+Hibernate: select b1_0.user_id,b1_0.badge from profile_badges b1_0 where b1_0.user_id=?
+2026-03-28T13:32:42.239+05:30  INFO 7984 --- [user-service] [nio-8081-exec-7] c.d.user_service.service.UserService     : Profile Updated Successfully Profile(userId=user_3BWKegI3nUmLHOjE4ZFqhEI1K9G, totalSubmissions=1, totalSolved=0, casualSolved=0, proSolved=0, engineeringSolved=0, pro_maxSolved=0, tagStats={}, frameworkStats={}, mostUsedFramework=null, yearlyActivity={2026-03-28=1}, badges=[], profileViews=0, currentStreak=0, maxStreak=0, lastSubmissionAt=2026-03-28T08:02:42.222877100Z, updatedAt=2026-03-28T07:38:51.021489Z)
+Hibernate: update profile set casual_solved=?,current_streak=?,engineering_solved=?,last_submission_at=?,max_streak=?,most_used_framework=?,pro_solved=?,promax_solved=?,profile_views=?,total_solved=?,total_submissions=?,updated_at=? where user_id=?
+Hibernate: insert into profile_activity_heatmap (user_id,activity_date,submission_count) values (?,?,?)
+Hibernate: select u1_0.id,u1_0.email,u1_0.username from users u1_0 where u1_0.username=?
+Hibernate: select p1_0.user_id,p1_0.casual_solved,p1_0.current_streak,p1_0.engineering_solved,p1_0.last_submission_at,p1_0.max_streak,p1_0.most_used_framework,p1_0.pro_solved,p1_0.promax_solved,p1_0.profile_views,p1_0.total_solved,p1_0.total_submissions,p1_0.updated_at from profile p1_0 where p1_0.user_id=?
+Hibernate: select ts1_0.user_id,ts1_0.tag,ts1_0.count from profile_tag_stats ts1_0 where ts1_0.user_id=?
+Hibernate: select fs1_0.user_id,fs1_0.framework,fs1_0.count from profile_framework_stats fs1_0 where fs1_0.user_id=?
+Hibernate: select ya1_0.user_id,ya1_0.activity_date,ya1_0.submission_count from profile_activity_heatmap ya1_0 where ya1_0.user_id=?
+Hibernate: select b1_0.user_id,b1_0.badge from profile_badges b1_0 where b1_0.user_id=?
