@@ -34,11 +34,11 @@ const getDifficultyColor = (difficulty: string) => {
     case 'casual':
     case 'beginner':
       return 'text-green-400'
-    case 'intermediate':
+    case 'pro':
       return 'text-yellow-400'
-    case 'advanced':
+    case 'engineer':
       return 'text-orange-400'
-    case 'expert':
+    case 'pro_max':
       return 'text-red-500'
     default:
       return 'text-zinc-300'
