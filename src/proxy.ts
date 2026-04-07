@@ -6,7 +6,7 @@ const publicRoutes = [
   "/sign-in",
   "/sign-up",
 ];
-const baseUrl = "https://prompt-bluebird-45.accounts.dev";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
 const isPublic = (path: string) =>
   publicRoutes.some(
@@ -14,6 +14,7 @@ const isPublic = (path: string) =>
   );
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
+  console.log(baseUrl)
   const { userId } = await auth();
   const path = req.nextUrl.pathname;
   if (!userId && !isPublic(path)) {

@@ -70,6 +70,7 @@ const CodeEditor = ({
   const { saveDraft, getDraft } = useCodeDraftStore()
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const hasLoadedDraft = useRef(false)
+  const loadedDraftKeyRef = useRef<string | null>(null)
 
   const codeRunnerMutation = useMutation({
     mutationKey: ["runCode"],
@@ -418,6 +419,9 @@ const CodeEditor = ({
   useEffect(() => {
     if (!problemId || !libOrFramework || !fileTreeManager) return
 
+    const draftKey = `${problemId}:${libOrFramework}`
+    if (loadedDraftKeyRef.current === draftKey) return
+
     const draft = getDraft(problemId, libOrFramework)
     if (draft && draft.fileTree.length > 0) {
       const restoreTreeRecursively = (
@@ -480,10 +484,37 @@ const CodeEditor = ({
           }, 0)
         }
       }
+    } else {
+      const editableTree = fileTreeManager.getEditableFiles()
+
+      const getFirstEditableFileId = (items: FileItem[]): string | null => {
+        for (const item of items) {
+          if (item.isFolder && item.children?.length) {
+            const nestedId = getFirstEditableFileId(item.children)
+            if (nestedId) return nestedId
+          }
+
+          if (!item.isFolder) {
+            return item.id
+          }
+        }
+
+        return null
+      }
+
+      const fallbackSelectedFileId = getFirstEditableFileId(editableTree)
+
+      saveDraft(problemId, libOrFramework, {
+        fileTree: editableTree,
+        selectedFileId: fallbackSelectedFileId,
+        openTabs: fallbackSelectedFileId ? [fallbackSelectedFileId] : [],
+        code: "",
+      })
     }
 
+    loadedDraftKeyRef.current = draftKey
     hasLoadedDraft.current = true
-  }, [problemId, libOrFramework, getDraft, getReadOnlyFileData])
+  }, [problemId, libOrFramework, fileTreeManager, getDraft, getReadOnlyFileData, saveDraft])
 
   const buttonVariants = {
     hover: { scale: 1.05 },
