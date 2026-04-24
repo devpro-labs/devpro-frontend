@@ -135,7 +135,7 @@ const CodeEditor = ({
   const getRuntimeEntryFileName = useCallback((language: string, framework: string) => {
     const baseFileName = getFileName(language)
     const image = getImageName(language)
-    if (image === "express-js" || image === "express-ts") {
+    if (image === "express-js" || image === "express-ts" || image === "fastapi-py") {
       return `src/${baseFileName}`
     }
     return baseFileName
@@ -145,7 +145,7 @@ const CodeEditor = ({
     const manager = new FileTreeManager()
     const mainFileName = getFileName(language)
 
-    const shouldUseSrcFolder = framework === "express-js" || framework === "express-ts"
+    const shouldUseSrcFolder = framework === "express-js" || framework === "express-ts" || framework === "fastapi"
 
     let mainFile: FileItem
     if (shouldUseSrcFolder) {
