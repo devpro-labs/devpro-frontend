@@ -159,7 +159,7 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
                 : null;
 
           if (liveUrl) {
-            setTestUrl(liveUrl);
+            setTestUrl(liveUrl.replace("https://", "http://"));
             setIsTestUrlLoading(false);
           }
         } else if (executionEvent.type === "INFO") {
