@@ -39,7 +39,6 @@ const page = () => {
 
   // Handle execution start - connect to WebSocket and open terminal
   const handleExecutionStart = useCallback((executionId: string) => {
-    console.log("📡 Connecting to execution WebSocket:", executionId);
     setIsConnecting(true);
     setTerminalOpen(true);
     connectWebSocket(executionId);

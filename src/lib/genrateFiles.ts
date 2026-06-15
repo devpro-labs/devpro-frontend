@@ -163,7 +163,6 @@ export const getReadOnlyFilesForFramework = (
   services: string[] = [],
   keys: Record<string, string | number> = {}
 ): ReadOnlyFileData[] => {
-  console.log("Generating readonly files for framework:", framework, "with services:", services);
   switch (framework) {
     case "express-js":
       return getExpressJsReadOnlyFiles(services, keys);

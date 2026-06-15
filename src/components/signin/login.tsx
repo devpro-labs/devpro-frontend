@@ -43,7 +43,6 @@ export function LoginForm() {
     }, token);
 
     if (apiResponse.STATUS != 200) {
-      console.log(401);
       toast.error("User verification failed", { duration: 3000 });
       signOut();
       return;
@@ -57,7 +56,6 @@ export function LoginForm() {
     e.preventDefault()
     setIsLoading(true)
     // Handle login logic here
-    console.log("Login:", { email, password })
     try {
       const res = await signIn.create({
         identifier: email,
@@ -68,7 +66,6 @@ export function LoginForm() {
 
 
     } catch (error: any) {
-      console.log(error)
       toast.error(error?.errors?.[0]?.message || "Login failed", { duration: 3000 });
     } finally {
       setIsLoading(false)
@@ -78,7 +75,6 @@ export function LoginForm() {
   const handleGoogleLogin = async () => {
     // Handle Google OAuth
     setIsLoading(true)
-    console.log("Google login")
     try {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
@@ -88,7 +84,6 @@ export function LoginForm() {
 
       await checkUserUtil();
     } catch (error: any) {
-      console.log(error)
       toast.error(error?.errors?.[0]?.message || "Google login failed", { duration: 3000 });
     } finally {
       setIsLoading(false)
@@ -97,7 +92,6 @@ export function LoginForm() {
 
   const handleGithubLogin = async () => {
     // Handle GitHub OAuth
-    console.log("GitHub login")
     setIsLoading(true)
     try {
       await signIn.authenticateWithRedirect({
@@ -107,7 +101,6 @@ export function LoginForm() {
       })
       await checkUserUtil();
     } catch (error: any) {
-      console.log(error)
       toast.error(error?.errors?.[0]?.message || "GitHub login failed", { duration: 3000 });
     } finally {
       setIsLoading(false)

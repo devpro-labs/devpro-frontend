@@ -14,7 +14,6 @@ const isPublic = (path: string) =>
   );
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
-  console.log(baseUrl)
   const { userId } = await auth();
   const path = req.nextUrl.pathname;
   if (!userId && !isPublic(path)) {

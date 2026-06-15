@@ -197,8 +197,6 @@ export class FileTreeManager {
   }
 
   updateFileContent(id: string, content: string): boolean {
-    console.log("Updating content for file ID:", id)
-    console.log("content:", content)
     const item = this.findItemById(id)
     if (!item || item.isFolder) return false
     item.content = content

@@ -45,7 +45,6 @@ export function SignupForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Handle signup logic here
-    console.log("Signup:", { firstName, lastName, email, password, username })
     setisLoading(true)
     if (!isLoaded) return
     try {
@@ -65,7 +64,6 @@ export function SignupForm() {
       setisOpen(true);
       toast.success("Verification code sent to your email", { duration: 3000 });
     } catch (error: any) {
-      console.log(error);
       toast.error(error?.errors?.[0]?.message || "Signup failed", { duration: 3000 });
     } finally {
       setisLoading(false)
@@ -91,7 +89,6 @@ export function SignupForm() {
         router.push(SITE_MAP.problems.Problems);
       }
     } catch (error: any) {
-      console.log(error)
       toast.error(error?.errors?.[0]?.message || "OTP verification failed", { duration: 3000 });
     } finally {
       setisLoading(false)
@@ -101,7 +98,6 @@ export function SignupForm() {
 
   const handleGoogleSignup = async () => {
     // Handle Google OAuth
-    console.log("Google signup")
     setisLoading(true)
     try {
       await signUp.authenticateWithRedirect({
@@ -110,7 +106,6 @@ export function SignupForm() {
         redirectUrlComplete: SITE_MAP.problems.Problems
       })
     } catch (error: any) {
-      console.log(error)
       toast.error(error?.errors?.[0]?.message || "Google signup failed", { duration: 3000 });
     }
     finally {
@@ -121,7 +116,6 @@ export function SignupForm() {
   const handleGithubSignup = async () => {
     // Handle GitHub OAuth
     setisLoading(true)
-    console.log("GitHub signup")
     try {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_github",
@@ -129,7 +123,6 @@ export function SignupForm() {
         redirectUrlComplete: SITE_MAP.problems.Problems
       })
     } catch (error: any) {
-      console.log(error)
       toast.error(error?.errors?.[0]?.message || "GitHub signup failed", { duration: 3000 });
     } finally {
       setisLoading(false)

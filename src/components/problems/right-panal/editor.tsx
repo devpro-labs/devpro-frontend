@@ -206,7 +206,6 @@ const CodeEditor = ({
 
     // Update readonly files in manager (keeps editable files, replaces readonly)
     fileTreeManager.setReadOnlyFiles(readOnlyData)
-    console.log("Services or keys changed, updated readonly files:", fileTreeManager.getFiles())
     setFileTree(fileTreeManager.getFiles())
   }, [services, keys, lib, fileTreeManager, getReadOnlyFileData])
 
@@ -288,11 +287,8 @@ const CodeEditor = ({
 
   const handleSelectFile = (id: string) => {
     // Save current file content before switching (only if not readonly)
-    console.log("Selecting file with ID:", id)
-    console.log("Current selected file ID:", selectedFileIdRef.current, "isCurrentFileReadOnly:", isCurrentFileReadOnly)
     const item = fileTreeManager?.getFileById(id)
     if (selectedFileIdRef.current && fileTreeManager && !isCurrentFileReadOnly) {
-      console.log("Saving content of file ID:", selectedFileIdRef.current)
       fileTreeManager.updateFileContent(selectedFileIdRef.current, code)
     }
 
@@ -300,7 +296,6 @@ const CodeEditor = ({
     // // All files (including readonly) are in fileTreeManager now
     if (!fileTreeManager) return
     if (item && !item.isFolder) {
-      console.log("File item found:", item)
       // Mark that we're programmatically setting code
       isSettingCodeRef.current = true
       setSelectedFileId(id)
@@ -457,7 +452,6 @@ const CodeEditor = ({
       const currentLib = EDITOR_LIBS.find((l) => getLibOrFramework(l.language) === libOrFramework)
       if (currentLib) {
         const readOnlyData = getReadOnlyFileData(currentLib.value)
-        console.log("Restoring draft, adding readonly files:", readOnlyData)
         manager.setReadOnlyFiles(readOnlyData)
       }
 
@@ -474,7 +468,6 @@ const CodeEditor = ({
       // Load code from the selected file content, not from draft.code
       if (validSelectedFileId) {
         const selectedFile = manager.getFileById(validSelectedFileId)
-        console.log("Selected file from draft:", selectedFile)
         if (selectedFile) {
           isSettingCodeRef.current = true
           setCode(selectedFile.content)

@@ -100,33 +100,22 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
     setIsTestUrlLoading(true);
 
     const wsUrl = `${WS_URL}${backendRoute.ws.execution(executionId)}`;
-    console.log("🔌 Connecting to WebSocket:", wsUrl);
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("✅ WebSocket connected");
       setIsConnected(true);
     };
 
     ws.onmessage = (event) => {
-      console.log("📨 Raw WebSocket data received:", event.data);
-      console.log("📨 Raw data type:", typeof event.data);
-
       try {
         const executionEvent: ExecutionEvent = JSON.parse(event.data);
-        console.log("📩 Parsed event object:", executionEvent);
-        console.log("📩 Event type:", executionEvent.type);
-        console.log("📩 Event data:", executionEvent.data);
-        console.log("📩 Event data type:", typeof executionEvent.data);
 
         if (executionEvent.type === "LOG") {
-          console.log("📝 LOG event received");
           const logMessage = typeof executionEvent.data === "string"
             ? executionEvent.data
             : JSON.stringify(executionEvent.data);
-          console.log("📝 Log message:", logMessage);
 
           setLogs((prev) => [
             ...prev,
@@ -136,19 +125,15 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
             },
           ]);
         } else if (executionEvent.type === "TESTCASE") {
-          console.log("🧪 TESTCASE event received");
-          console.log("🧪 Test result data:", JSON.stringify(executionEvent.data, null, 2));
 
           // Extract the actual test result from the DATA wrapper
           const response = executionEvent.data as TestCaseResponse;
           const testResultData = response.DATA || executionEvent.data;
 
-          console.log("🧪 Extracted test result:", testResultData);
           setTestResult(testResultData as TestResult);
           setIsTestUrlLoading(false);
           setIsComplete(true);
         } else if (executionEvent.type === "URL") {
-          console.log("🔗 URL event received:", executionEvent.data);
           const urlData = executionEvent.data;
           const liveUrl = typeof urlData === "string"
             ? urlData
@@ -163,7 +148,6 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
             setIsTestUrlLoading(false);
           }
         } else if (executionEvent.type === "INFO") {
-          console.log("ℹ️ INFO event received:", executionEvent.data);
           const infoMessage = typeof executionEvent.data === "string"
             ? executionEvent.data
             : JSON.stringify(executionEvent.data);
@@ -176,7 +160,6 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
             },
           ]);
         } else if (executionEvent.type === "ERROR") {
-          console.log("❌ ERROR event received:", executionEvent.data);
           const errorData = executionEvent.data as ExecutionError;
           setError(errorData);
           setIsTestUrlLoading(false);
@@ -188,7 +171,6 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
             duration: 3000,
           });
         } else {
-          console.log("⚠️ Unknown event type:", executionEvent.type);
         }
       } catch (error) {
         console.error("❌ Failed to parse WebSocket message:", error);
@@ -209,7 +191,6 @@ export function useExecutionSocket(): UseExecutionSocketReturn {
     };
 
     ws.onclose = (event) => {
-      console.log("🔌 WebSocket closed:", event.code, event.reason);
       setIsConnected(false);
     };
   }, [disconnect, clearLogs]);

@@ -25,7 +25,6 @@ const fetchSampleTestCases = async (
   token: string,
   id: string
 ): Promise<Response> => {
-  console.log("testcase fetching for problem id:", id);
   const api = await API(token);
   const response = await api.get(backendRoute.testcases.getSampleTestcasesByProblemId(id));
   return response.data;
@@ -41,7 +40,6 @@ const runCode = async (
   files: FileItem[],
 ): Promise<Response> => {
   const editableFiles = filterReadOnlyFiles(files);
-  console.log("Running code with editable file tree:", editableFiles);
   const api = await API(token);
   const response = await api.post(backendRoute.code.runCode(problemId), {
     code,
@@ -64,7 +62,6 @@ const submitCode = async (
   files: FileItem[],
 ): Promise<Response> => {
   const editableFiles = filterReadOnlyFiles(files);
-  console.log("Submitting code with editable file tree:", editableFiles);
   const api = await API(token);
   const response = await api.post(backendRoute.code.submitCode(problemId), {
     code,
